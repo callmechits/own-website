@@ -48,7 +48,7 @@ const playing = games.find((g) => g.status === 'current');
         <figure class="photo">
           <!-- Served from public/me.jpeg; files in public/ are served from the site root. -->
           <img
-            src="/me.jpg"
+            src="/me.jpeg"
             alt="Chits, smiling at the camera"
             width="600" height="750"
             loading="eager"
@@ -136,6 +136,8 @@ const playing = games.find((g) => g.status === 'current');
     max-width: 36rem;
     font-size: clamp(1.3rem, 2.4vw, var(--s-2));
     line-height: 1.4;
+  }   /* ← this was missing */
+
   /* ── Statement + photo ──────────────────────────────────────────────── */
   .intro {
     display: grid;
@@ -143,31 +145,29 @@ const playing = games.find((g) => g.status === 'current');
     justify-content: start;
     align-items: start;
     gap: clamp(2rem, 6vw, 6rem);
-    margin-top: clamp(3rem, 8vh, 5rem);   /* spacing that .statement used to own */
+    margin-top: clamp(3rem, 8vh, 5rem);
   }
   .photo {
     margin: 0;
-    transform: rotate(2deg);              /* pinned to the board, slightly crooked */
+    transform: rotate(2deg);
   }
   .photo img {
     display: block;
     width: 100%;
     height: auto;
-    aspect-ratio: 4 / 5;                  /* crops any photo to the same portrait shape */
-    object-fit: cover;                    /* fill the frame without stretching */
-    border: 6px solid var(--paper);       /* print-style white border */
-    outline: 1px solid var(--rule);       /* hairline edge so the border shows on light bg */
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border: 6px solid var(--paper);
+    outline: 1px solid var(--rule);
   }
   .photo figcaption {
     margin-top: 0.6rem;
     font-size: 1.5rem;
-    transform: rotate(-4deg);             /* tilted against the photo */
+    transform: rotate(-4deg);
   }
-  /* Phones: photo moves under the text, smaller, right-aligned */
   @media (max-width: 760px) {
     .intro { grid-template-columns: 1fr; gap: 2rem; }
     .photo { max-width: 14rem; justify-self: end; }
-  }    
   }
 
   /* ── Section blocks ─────────────────────────────────────────────────── */

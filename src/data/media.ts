@@ -21,9 +21,25 @@ export const games: MediaItem[] = [
   {
     title: 'Killzone 3',
     status: 'finished',
-    take: 'Rebuilt the controls for keyboard and mouse, which it was never meant for. Worth it.',
+    take: 'Best and one of the first masterpieces I played. I also had to input map controller onto keyboard (it was a nightmare).',
     year: 2011,
   },
+  {
+    title: 'Uncharted 2',
+    status: 'dropped',
+    take: 'Best masterpiece that I could not finish because my PS3 gave up after the 16th chapter. I wish I could go back and complete it.',
+  },
+  {
+    title: 'Days Gone',
+    status: 'dropped',
+    take: 'Pretty good game until I played it, I just lost interest after my days playing it. Even though I would go back to play it.',
+  },
+  {
+    title: 'Uncharted 4',
+    status: 'finished',
+    take: '10/10. What a game; it was the first game that I downloaded on my new laptop because I love the Uncharted series.',
+  },
+  
   // { title: '', status: 'current', rating: 8, take: '' },
 ];
 
