@@ -1,0 +1,184 @@
+---
+// src/pages/index.astro
+// -----------------------------------------------------------------------------
+// Home page. Three moves, then out of the way:
+//   1. The name, enormous, with a red-pen aside.
+//   2. Selected work, set big, each "graded" in red pen.
+//   3. The latest lecture (blog post), with its number set huge.
+// Plus a quiet "currently" line if anything is marked current in media.ts.
+// -----------------------------------------------------------------------------
+import Base from '../layouts/Base.astro';
+import Grade from '../components/Grade.astro';
+import { projects, grade } from '../data/projects';
+import { games, shows } from '../data/media';
+import { getPosts, lectureNumbers, excerpt, fmtDate } from '../data/posts';
+import { slug } from '../data/slug';
+
+const posts = await getPosts();
+const latest = posts[0];
+const numbers = lectureNumbers(posts);
+
+// "Currently": the first item marked current in each list, if any.
+const watching = shows.find((s) => s.status === 'current');
+const playing = games.find((g) => g.status === 'current');
+---
+<Base>
+  <main class="wrap">
+    <!-- ── 1. Name ─────────────────────────────────────────────────────── -->
+    <section class="hero">
+      <h1 class="giant">
+        <span class="sr-only">Chitrarath Singh Mehra, known as </span>Chits.
+      </h1>
+      <p class="tag pen" aria-hidden="true">
+        <!-- Hand-drawn arrow pointing up at the name -->
+        <svg class="arrow" viewBox="0 0 60 50" aria-hidden="true">
+          <path d="M52 46 C 40 40, 22 34, 12 10" />
+          <path d="M6 18 L12 8 L20 15" />
+        </svg>
+        short for Chitrarath Singh Mehra. you're welcome.
+      </p>
+      <p class="statement">
+        I study computer science at Purdue, do olympiad maths for fun, and
+        build software that watches your hands. This site holds my work, a blog
+        I write most days, and opinions about anime nobody asked for.
+      </p>
+    </section>
+
+    <!-- ── 2. Selected work ────────────────────────────────────────────── -->
+    <section class="block">
+      <div class="block-head">
+        <h2>Selected work</h2>
+        <p class="pen">self-graded, so adjust for bias</p>
+      </div>
+      <ul class="work">
+        {projects.slice(0, 4).map((p) => (
+          <li>
+            <a href={`/projects/#${slug(p.name)}`}>
+              <span class="work-name">{p.name}</span>
+              <span class="work-meta">{p.when}<br />{p.stack.slice(0, 3).join(', ')}</span>
+              <Grade mark={grade[p.status].mark} label={grade[p.status].label} />
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="more"><a href="/projects/">Every project, including the unfinished ones</a></p>
+    </section>
+
+    <!-- ── 3. Latest lecture ───────────────────────────────────────────── -->
+    {latest && (
+      <section class="block">
+        <div class="block-head">
+          <h2>Latest lecture</h2>
+          <p class="pen">attendance optional, but noted</p>
+        </div>
+        <a class="lecture" href={`/blog/${latest.id}/`}>
+          <span class="lecture-n" aria-hidden="true">{numbers.get(latest.id)}</span>
+          <span class="lecture-body">
+            <span class="lecture-title">{latest.data.title}</span>
+            <time datetime={latest.data.date.toISOString()}>{fmtDate(latest.data.date)}</time>
+            <span class="lecture-excerpt">{excerpt(latest)}</span>
+          </span>
+        </a>
+        <p class="more"><a href="/blog/">All lectures</a></p>
+      </section>
+    )}
+
+    <!-- ── Currently (only if something is marked current) ─────────────── -->
+    {(watching || playing) && (
+      <section class="block currently">
+        {watching && <p>Currently watching <a href="/shows/">{watching.title}</a>.</p>}
+        {playing && <p>Currently playing <a href="/games/">{playing.title}</a>.</p>}
+      </section>
+    )}
+  </main>
+</Base>
+
+<style>
+  /* ── Hero ───────────────────────────────────────────────────────────── */
+  .hero { padding-top: clamp(1rem, 6vh, 4rem); }
+  .giant {
+    font-size: var(--s-giant);
+    font-weight: 800;
+    line-height: 0.78;
+    letter-spacing: -0.03em;   /* tight, but letters must not collide at this size */
+    margin-left: -0.06em;      /* optical alignment for very large type */
+  }
+  .tag {
+    position: relative;
+    margin: 1.4rem 0 0 clamp(3.5rem, 30vw, 26rem);
+    font-size: clamp(1.5rem, 2.8vw, 2.3rem);
+    transform: rotate(-3deg);
+    max-width: 22rem;
+  }
+  .arrow {
+    position: absolute;
+    left: -3.4rem; top: -2.6rem;
+    width: 3rem; height: 2.6rem;
+    fill: none; stroke: var(--red); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .statement {
+    margin: clamp(3rem, 8vh, 5rem) 0 0;
+    max-width: 36rem;
+    font-size: clamp(1.3rem, 2.4vw, var(--s-2));
+    line-height: 1.4;
+  }
+
+  /* ── Section blocks ─────────────────────────────────────────────────── */
+  .block { margin-top: clamp(6rem, 16vh, 10rem); }
+  .block-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-bottom: 1.75rem; }
+  .block-head .pen { margin: 0; font-size: 1.6rem; transform: rotate(-2deg); }
+  .more { margin: 1.5rem 0 0; }
+
+  /* ── Selected work: giant names, grades on the right ────────────────── */
+  .work { list-style: none; margin: 0; padding: 0; }
+  .work li { border-top: 1px solid var(--rule); }
+  .work li:last-child { border-bottom: 1px solid var(--rule); }
+  .work a {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 1.5rem 2.5rem;
+    padding: 1.4rem 0;
+    text-decoration: none;
+  }
+  .work-name {
+    font-family: var(--f-big);
+    font-weight: 800;
+    font-variation-settings: 'wdth' 75;
+    font-size: var(--s-large);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    transition: transform 220ms ease;
+  }
+  /* The only hover motion on the page: the name leans in toward you. */
+  .work a:hover .work-name { transform: translateX(0.4rem); }
+  .work-meta { font-size: var(--s--1); color: var(--muted); text-align: right; line-height: 1.4; }
+
+  /* ── Latest lecture: huge number beside the title ───────────────────── */
+  .lecture { display: flex; gap: clamp(1.25rem, 4vw, 3rem); align-items: flex-start; text-decoration: none; max-width: 56rem; }
+  .lecture-n {
+    font-family: var(--f-big);
+    font-weight: 800;
+    font-variation-settings: 'wdth' 75;
+    font-size: var(--s-huge);
+    line-height: 0.8;
+    letter-spacing: -0.04em;
+    color: var(--red);
+  }
+  .lecture-body { display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.4rem; }
+  .lecture-title { font-family: var(--f-big); font-weight: 700; font-variation-settings: 'wdth' 75;
+                   font-size: var(--s-3); line-height: 1; }
+  .lecture:hover .lecture-title { text-decoration: underline; text-decoration-color: var(--red); text-decoration-thickness: 2px; }
+  .lecture time { color: var(--muted); font-size: var(--s--1); }
+  .lecture-excerpt { max-width: 34rem; }
+
+  .currently p { margin: 0.3rem 0; font-size: var(--s-1); }
+
+  /* ── Small screens ──────────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .tag { margin-left: 3.5rem; }
+    .work a { grid-template-columns: 1fr auto; }
+    .work-meta { grid-column: 1; grid-row: 2; text-align: left; }
+    .work :global(.grade) { grid-column: 2; grid-row: 1 / 3; }
+  }
+</style>

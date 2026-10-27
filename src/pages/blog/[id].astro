@@ -1,0 +1,75 @@
+---
+// src/pages/blog/[id].astro
+// -----------------------------------------------------------------------------
+// One page per post. getStaticPaths runs at build time: one URL per Markdown
+// file in src/content/blog/. Each post is shown as a numbered lecture.
+// -----------------------------------------------------------------------------
+import Base from '../../layouts/Base.astro';
+import { render } from 'astro:content';
+import { getPosts, lectureNumbers, fmtDate, type Post } from '../../data/posts';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  const numbers = lectureNumbers(posts);
+  // Neighbours let each post link to the previous and next lecture.
+  return posts.map((post, i) => ({
+    params: { id: post.id },
+    props: { post, n: numbers.get(post.id)!, newer: posts[i - 1], older: posts[i + 1] },
+  }));
+}
+
+interface Props { post: Post; n: number; newer?: Post; older?: Post }
+const { post, n, newer, older } = Astro.props;
+const { Content } = await render(post);
+---
+<Base title={post.data.title}>
+  <article class="wrap post">
+    <header>
+      <p class="n" aria-hidden="true">{n}</p>
+      <h1>{post.data.title}</h1>
+      <p class="meta">
+        <span>Lecture {n}</span>
+        <time datetime={post.data.date.toISOString()}>{fmtDate(post.data.date)}</time>
+        {post.data.tags.map((t) => <a href={`/blog/tag/${t}/`}>{t}</a>)}
+      </p>
+      {post.data.mood && <p class="mood pen">mood: {post.data.mood}</p>}
+    </header>
+
+    <div class="column content"><Content /></div>
+
+    <nav class="pager column" aria-label="More lectures">
+      {older ? <a href={`/blog/${older.id}/`}>Previous: {older.data.title}</a> : <span></span>}
+      {newer && <a href={`/blog/${newer.id}/`}>Next: {newer.data.title}</a>}
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .post { padding-top: clamp(1rem, 5vh, 3rem); }
+  /* The lecture number, enormous and faint, sits behind the title. */
+  .n {
+    margin: 0 0 -0.2em;          /* title overlaps the foot of the numeral */
+    font-family: var(--f-big);
+    font-weight: 800;
+    font-variation-settings: 'wdth' 75;
+    font-size: var(--s-giant);
+    line-height: 0.8;
+    letter-spacing: -0.05em;
+    color: var(--rule);
+    margin-left: -0.06em;
+  }
+  h1 { position: relative; font-size: var(--s-large); font-weight: 800; letter-spacing: -0.03em; max-width: 50rem; }
+  .meta { position: relative; display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; margin: 1.25rem 0 0; color: var(--muted); font-size: var(--s--1); }
+  .meta a { color: var(--ink); }
+  .mood { margin: 0.75rem 0 0; font-size: 1.6rem; transform: rotate(-2deg); transform-origin: left; }
+
+  /* Reading styles for rendered Markdown */
+  .content { margin-top: 3.5rem; font-size: 1.2rem; line-height: 1.72; }
+  .content :global(h2) { margin: 3rem 0 1rem; }
+  .content :global(h3) { margin: 2.25rem 0 0.75rem; }
+  .content :global(blockquote) { margin: 1.75rem 0; padding-left: 1.25rem; border-left: 3px solid var(--red); font-style: italic; }
+  .content :global(pre) { margin: 1.75rem 0; }
+
+  .pager { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+           margin-top: 5rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); }
+</style>

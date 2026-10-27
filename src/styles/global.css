@@ -1,0 +1,125 @@
+/* src/styles/global.css
+ * -----------------------------------------------------------------------------
+ * Design tokens and base typography.
+ *
+ * Concept: the lecture notes of a professor students actually like.
+ *   Light mode: fountain-pen blue ink on clean paper, one red pen for jokes.
+ *   Dark mode:  a chalkboard. Same layout, chalk instead of ink.
+ * Three voices, three typefaces:
+ *   Bricolage Grotesque (condensed, huge)  = the professor talking loudly
+ *   Source Serif 4                         = the professor explaining well
+ *   Caveat                                 = the red pen in the margins
+ * -------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light dark;
+
+  /* Light: ink on paper */
+  --paper: #f8f9fb;
+  --ink: #1b2654;      /* fountain-pen blue, darkened for body-text contrast */
+  --muted: #5d6589;
+  --rule: #dde1eb;
+  --red: #cf2a37;      /* the red pen */
+  --mark: #ffe45c;     /* highlighter, used only for text selection */
+
+  /* Fonts, with fallbacks that keep roughly the same shape */
+  --f-big: 'Bricolage Grotesque', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  --f-text: 'Source Serif 4', 'Iowan Old Style', Georgia, serif;
+  --f-pen: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+
+  /* Type scale, ratio 1.25. Display sizes are viewport-based (the gigantism). */
+  --s--1: 0.85rem;
+  --s-0: 1.125rem;
+  --s-1: 1.4rem;
+  --s-2: 1.75rem;
+  --s-3: 2.2rem;
+  --s-giant: clamp(6rem, 50vw, 42rem);     /* the name on the home page: ~fills the width */
+  --s-huge: clamp(3.5rem, 13vw, 11rem);    /* page titles */
+  --s-large: clamp(2.2rem, 6vw, 4.8rem);   /* project names, lecture numbers */
+
+  --measure: 40rem;    /* main text column, ~70 characters of serif */
+  --margin-w: 13rem;   /* width of the margin-note column on wide screens */
+
+  /* Shiki code theme mapped onto the palette */
+  --astro-code-foreground: var(--ink);
+  --astro-code-background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  --astro-code-token-keyword: var(--red);
+  --astro-code-token-string: var(--muted);
+  --astro-code-token-function: var(--ink);
+  --astro-code-token-comment: var(--muted);
+  --astro-code-token-constant: var(--red);
+  --astro-code-token-punctuation: var(--muted);
+
+  /* Keep clear of phone notches and home bars */
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Dark: chalkboard. Slate green, chalk white, pink chalk for the "red pen". */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1f2b26;
+    --ink: #eceee6;
+    --muted: #a3ada5;
+    --rule: #34443c;
+    --red: #ff9488;
+    --mark: #d9c75a;
+  }
+}
+
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-text);
+  font-size: var(--s-0);
+  line-height: 1.65;            /* serif body: a little extra leading */
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;           /* giant type may bleed; never scroll sideways */
+}
+
+::selection { background: var(--mark); color: #1b2654; }
+
+/* Headings default to the big condensed voice */
+h1, h2, h3 {
+  font-family: var(--f-big);
+  font-weight: 700;
+  font-variation-settings: 'wdth' 75;   /* condensed */
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+h2 { font-size: var(--s-3); }
+h3 { font-size: var(--s-2); }
+
+p { margin: 0 0 1em; }
+
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+a:hover { text-decoration-color: var(--red); text-decoration-thickness: 2px; }
+
+:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; border-radius: 2px; }
+
+img { max-width: 100%; height: auto; }
+pre { overflow-x: auto; padding: 1rem 1.2rem; font-size: 0.9rem; line-height: 1.5; border-radius: 4px; }
+code { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 0.9em; }
+
+/* Page wrapper: wide enough for text column + margin-note column */
+.wrap { width: min(100% - 2.5rem, 72rem); margin-inline: auto; }
+
+/* Main text column; margin notes float out of its right edge (see Note.astro) */
+.column { max-width: var(--measure); }
+
+/* Red-pen handwriting, reusable */
+.pen { font-family: var(--f-pen); color: var(--red); font-weight: 500; line-height: 1.15; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
+           clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

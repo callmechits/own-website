@@ -1,0 +1,65 @@
+---
+// src/components/PostList.astro
+// -----------------------------------------------------------------------------
+// Blog index as a lecture list: big lecture number, title, date.
+// The numbers are a real sequence (oldest = 1), so numbering them is honest.
+// -----------------------------------------------------------------------------
+import { fmtDate, type Post } from '../data/posts';
+
+interface Props {
+  posts: Post[];                 // the posts to show, newest first
+  numbers: Map<string, number>;  // global lecture numbers (lectureNumbers())
+}
+const { posts, numbers } = Astro.props;
+---
+{posts.length === 0 ? (
+  <p class="empty">No lectures yet. Run <code>npm run new</code> to write today's.</p>
+) : (
+  <ol class="list" reversed>
+    {posts.map((p) => (
+      <li>
+        <a href={`/blog/${p.id}/`}>
+          <span class="n" aria-hidden="true">{numbers.get(p.id)}</span>
+          <span class="title">
+            {p.data.title}
+            {p.data.draft && <span class="draft pen"> draft</span>}
+          </span>
+          <time datetime={p.data.date.toISOString()}>{fmtDate(p.data.date)}</time>
+        </a>
+      </li>
+    ))}
+  </ol>
+)}
+
+<style>
+  .list { list-style: none; margin: 0; padding: 0; max-width: 52rem; }
+  li { border-top: 1px solid var(--rule); }
+  li:last-child { border-bottom: 1px solid var(--rule); }
+  a {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr auto;
+    align-items: baseline;
+    gap: 1.25rem;
+    padding: 1rem 0;
+    text-decoration: none;
+  }
+  .n {
+    font-family: var(--f-big);
+    font-weight: 800;
+    font-variation-settings: 'wdth' 75;
+    font-size: var(--s-3);
+    line-height: 1;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .title { font-size: var(--s-1); line-height: 1.3; }
+  a:hover .title { text-decoration: underline; text-decoration-color: var(--red); }
+  a:hover .n { color: var(--red); }
+  time { color: var(--muted); font-size: var(--s--1); white-space: nowrap; }
+  .draft { font-size: 1.3rem; }
+  .empty { color: var(--muted); }
+  @media (max-width: 560px) {
+    a { grid-template-columns: 3.5rem 1fr; }
+    time { grid-column: 2; }
+  }
+</style>

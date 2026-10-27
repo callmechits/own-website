@@ -1,0 +1,24 @@
+---
+// src/pages/blog/index.astro — every post, newest first, numbered as lectures.
+import Section from '../../layouts/Section.astro';
+import PostList from '../../components/PostList.astro';
+import { getPosts, lectureNumbers } from '../../data/posts';
+
+const posts = await getPosts();
+const numbers = lectureNumbers(posts);
+const tags = [...new Set(posts.flatMap((p) => p.data.tags))].sort();
+---
+<Section title="Blog" aside="lecture notes, roughly daily" lede="Life, maths, games, whatever happened today. Short on purpose.">
+  {tags.length > 0 && (
+    <p class="tags">
+      <span>Topics:</span>
+      {tags.map((t) => <a href={`/blog/tag/${t}/`}>{t}</a>)}
+    </p>
+  )}
+  <PostList posts={posts} numbers={numbers} />
+</Section>
+
+<style>
+  .tags { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin-bottom: 2.5rem; color: var(--muted); }
+  .tags a { color: var(--ink); }
+</style>

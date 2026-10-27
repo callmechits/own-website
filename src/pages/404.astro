@@ -1,0 +1,18 @@
+---
+// src/pages/404.astro — served for any URL that doesn't exist.
+import Base from '../layouts/Base.astro';
+---
+<Base title="Not found">
+  <main class="wrap nf">
+    <h1>404</h1>
+    <p class="pen">this lecture was cancelled</p>
+    <p class="msg">The page you asked for doesn't exist, or it moved. The <a href="/">front page</a> still works.</p>
+  </main>
+</Base>
+
+<style>
+  .nf { padding-top: 6vh; }
+  h1 { font-size: var(--s-giant); font-weight: 800; line-height: 0.8; letter-spacing: -0.05em; margin-left: -0.06em; }
+  .pen { font-size: clamp(1.8rem, 4vw, 3rem); margin: 1rem 0 0; transform: rotate(-3deg); transform-origin: left; }
+  .msg { margin-top: 2.5rem; max-width: 30rem; font-size: var(--s-1); }
+</style>

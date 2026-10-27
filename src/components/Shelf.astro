@@ -1,0 +1,52 @@
+---
+// src/components/Shelf.astro
+// -----------------------------------------------------------------------------
+// Games or shows, grouped by status (current, finished, up next, dropped).
+// Ratings are marked in red pen like a graded paper.
+// -----------------------------------------------------------------------------
+import Grade from './Grade.astro';
+import type { MediaItem, MediaStatus } from '../data/media';
+import { statusWord } from '../data/media';
+
+interface Props { items: MediaItem[]; kind: 'games' | 'shows' }
+const { items, kind } = Astro.props;
+
+const order: MediaStatus[] = ['current', 'finished', 'queued', 'dropped'];
+const groups = order
+  .map((s) => ({ status: s, label: statusWord[kind][s], list: items.filter((i) => i.status === s) }))
+  .filter((g) => g.list.length > 0);
+---
+{groups.length === 0 ? (
+  <p class="empty">Nothing here yet. Add entries to <code>src/data/media.ts</code>.</p>
+) : (
+  groups.map((g) => (
+    <section class="group">
+      <h2>{g.label}</h2>
+      <ul>
+        {g.list.map((i) => (
+          <li data-status={i.status}>
+            <div>
+              <p class="title">{i.title}{i.year && <span class="year"> ({i.year})</span>}</p>
+              <p class="take">{i.take}</p>
+            </div>
+            {i.rating !== undefined && <Grade mark={`${i.rating}/10`} label={`Rated ${i.rating} out of 10`} />}
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))
+)}
+
+<style>
+  .group + .group { margin-top: 4rem; }
+  h2 { margin-bottom: 1rem; color: var(--muted); }
+  ul { list-style: none; margin: 0; padding: 0; max-width: 46rem; }
+  li { display: flex; justify-content: space-between; align-items: center; gap: 2rem;
+       padding: 1.25rem 0; border-top: 1px solid var(--rule); }
+  .title { margin: 0; font-family: var(--f-big); font-weight: 700; font-variation-settings: 'wdth' 75;
+           font-size: var(--s-2); line-height: 1.05; }
+  .year { font-weight: 400; color: var(--muted); font-size: 0.6em; }
+  .take { margin: 0.35rem 0 0; }
+  li[data-status='dropped'] .title { text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 2px; }
+  .empty { color: var(--muted); }
+</style>

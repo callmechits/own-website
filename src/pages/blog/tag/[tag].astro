@@ -1,0 +1,35 @@
+---
+// src/pages/blog/tag/[tag].astro
+// -----------------------------------------------------------------------------
+// One page per tag (e.g. /blog/tag/life/). Lecture numbers stay global, so
+// Lecture 14 is Lecture 14 wherever it appears.
+// -----------------------------------------------------------------------------
+import Section from '../../../layouts/Section.astro';
+import PostList from '../../../components/PostList.astro';
+import { getPosts, lectureNumbers, type Post } from '../../../data/posts';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  const numbers = lectureNumbers(posts);
+  const tags = new Set(posts.flatMap((p) => p.data.tags));
+  return [...tags].map((tag) => ({
+    params: { tag },
+    props: { posts: posts.filter((p) => p.data.tags.includes(tag)), numbers },
+  }));
+}
+
+interface Props { posts: Post[]; numbers: Map<string, number> }
+const { tag } = Astro.params;
+const { posts, numbers } = Astro.props;
+---
+<Section
+  title={tag!.charAt(0).toUpperCase() + tag!.slice(1)}
+  aside={`${posts.length} lecture${posts.length === 1 ? '' : 's'} on this so far`}
+>
+  <PostList posts={posts} numbers={numbers} />
+  <p class="all"><a href="/blog/">All lectures</a></p>
+</Section>
+
+<style>
+  .all { margin-top: 2.5rem; }
+</style>

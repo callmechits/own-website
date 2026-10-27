@@ -1,0 +1,66 @@
+---
+// src/pages/about.astro — the syllabus. Edit the prose directly here.
+import Section from '../layouts/Section.astro';
+import Note from '../components/Note.astro';
+import { site } from '../data/site';
+---
+<Section
+  title="About"
+  aside="a.k.a. the syllabus"
+  lede="Computer science at Purdue, Indianapolis, by way of Haldwani, Uttarakhand."
+>
+  <div class="column prose">
+    <Note>no tests. probably.</Note>
+    <p>
+      I like problems that have a right answer and take a long time to find:
+      olympiad maths, physics, and software that has to keep up in real time.
+      I also like explaining them, which is how you end up with a website that
+      calls its blog posts lectures.
+    </p>
+
+    <h2>Education</h2>
+    <h3>Purdue University, College of Science</h3>
+    <p>BS Computer Science, expected May 2030. Chess Club and Computer Science Club.</p>
+    <h3>Dikshant International School, Haldwani</h3>
+    <p>High school, 2022 to 2026. AP Calculus BC and AP Physics C: Mechanics, both 5.</p>
+
+    <h2 id="experience">Experience</h2>
+    <h3>Software development intern, Design O’ Web</h3>
+    <p class="when">2024 to 2025</p>
+    <p>Built mobile application components in Flutter for production apps.</p>
+    <h3>Independent researcher, AI ethics</h3>
+    <p class="when">2025 to 2026</p>
+    <p>
+      Case studies on privacy, transparency, autonomy and fairness in AI, and a
+      proposed oversight framework built around accountability.
+    </p>
+
+    <h2 id="awards">Awards</h2>
+    <h3>Indian National Mathematical Olympiad</h3>
+    <p class="when">2022, 2024, 2025</p>
+    <Note tilt={2}>my mother's favourite section</Note>
+    <p>Qualified three times; INMO Awardee in 2025.</p>
+    <h3>NAEST</h3>
+    <p class="when">2025</p>
+    <p>
+      First in state and top 40 nationally (top 0.1%). Worked with
+      Dr. H.C. Verma, and in labs at IIT Kanpur.
+    </p>
+
+    <h2 id="contact">Office hours</h2>
+    <Note>I reply faster than most professors</Note>
+    <p>
+      Any time, by email at <a href={`mailto:${site.email}`}>{site.email}</a>.
+      Code lives on <a href={site.github} target="_blank" rel="noopener">GitHub</a>.
+    </p>
+  </div>
+</Section>
+
+<style>
+  .prose > p:first-of-type { font-size: var(--s-1); line-height: 1.5; }
+  .prose h2 { font-size: var(--s-3); margin: 4.5rem 0 1.25rem; }
+  .prose h3 { font-family: var(--f-text); font-variation-settings: normal; font-weight: 600;
+              font-size: var(--s-0); line-height: 1.4; letter-spacing: 0; margin-top: 1.5rem; }
+  .prose h3 + p { margin-top: 0.15rem; }
+  .when { margin: 0; color: var(--muted); font-size: var(--s--1); }
+</style>

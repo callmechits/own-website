@@ -1,0 +1,31 @@
+---
+// src/pages/friends.astro — content lives in src/data/friends.ts.
+import Section from '../layouts/Section.astro';
+import { friends } from '../data/friends';
+---
+<Section title="Friends" aside="the seating chart" lede="The people who make the course worth taking.">
+  {friends.length === 0 ? (
+    <p class="empty">No one here yet. Add friends in <code>src/data/friends.ts</code> once they've said yes.</p>
+  ) : (
+    <ul class="grid">
+      {friends.map((f) => (
+        <li>
+          {f.href
+            ? <a class="name" href={f.href} target="_blank" rel="noopener">{f.name}</a>
+            : <span class="name">{f.name}</span>}
+          <p>{f.line}</p>
+        </li>
+      ))}
+    </ul>
+  )}
+</Section>
+
+<style>
+  .grid { list-style: none; margin: 0; padding: 0; display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 2.5rem 2rem; }
+  .name { font-family: var(--f-big); font-weight: 800; font-variation-settings: 'wdth' 75;
+          font-size: var(--s-3); line-height: 1; text-decoration: none; }
+  a.name:hover { text-decoration: underline; text-decoration-color: var(--red); }
+  .grid p { margin: 0.5rem 0 0; }
+  .empty { color: var(--muted); }
+</style>

@@ -1,0 +1,28 @@
+---
+// src/components/Grade.astro
+// -----------------------------------------------------------------------------
+// A circled red-pen grade, the way a teacher marks the top of a paper.
+// Used for project status ("A", "Inc.") and media ratings ("8/10").
+// -----------------------------------------------------------------------------
+interface Props { mark: string; label?: string }   // label = accessible meaning
+const { mark, label } = Astro.props;
+---
+<span class="grade pen" title={label} aria-label={label ?? mark}>{mark}</span>
+
+<style>
+  .grade {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2.6em;
+    height: 2.6em;
+    padding: 0 0.45em;
+    border: 2px solid var(--red);
+    /* irregular radii read as a hand-drawn loop rather than a perfect circle */
+    border-radius: 55% 45% 50% 52% / 48% 55% 45% 52%;
+    transform: rotate(-8deg);
+    font-size: 1.35rem;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+</style>

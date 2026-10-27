@@ -1,0 +1,47 @@
+---
+// src/pages/projects.astro — every project. Content: src/data/projects.ts.
+import Section from '../layouts/Section.astro';
+import Grade from '../components/Grade.astro';
+import { projects, grade } from '../data/projects';
+import { slug } from '../data/slug';
+---
+<Section
+  title="Projects"
+  aside="graded on a generous curve"
+  lede="Things I've built and things I'm still building. Inc. means incomplete, not incompetent."
+>
+  <ol class="list">
+    {projects.map((p) => (
+      <li id={slug(p.name)}>
+        <div class="top">
+          <h2>{p.name}</h2>
+          <Grade mark={grade[p.status].mark} label={grade[p.status].label} />
+        </div>
+        <p class="meta">{p.when}. {p.stack.join(', ')}.</p>
+        <div class="column">
+          <p>{p.summary}</p>
+          {p.points && p.points.length > 0 && (
+            <ul class="points">{p.points.map((pt) => <li>{pt}</li>)}</ul>
+          )}
+          {p.links && p.links.length > 0 && (
+            <p class="links">
+              {p.links.map((l) => <a href={l.href} target="_blank" rel="noopener">{l.label}</a>)}
+            </p>
+          )}
+        </div>
+      </li>
+    ))}
+  </ol>
+</Section>
+
+<style>
+  .list { list-style: none; margin: 0; padding: 0; }
+  .list > li { padding: 3rem 0; border-top: 1px solid var(--rule); }
+  .list > li:first-child { border-top: 0; padding-top: 0; }
+  .top { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+  h2 { font-size: var(--s-large); font-weight: 800; letter-spacing: -0.03em; }
+  .meta { margin: 0.75rem 0 1.25rem; color: var(--muted); font-size: var(--s--1); }
+  .points { padding-left: 1.1rem; margin: 0; }
+  .points li + li { margin-top: 0.4rem; }
+  .links { display: flex; gap: 1.5rem; margin-top: 1rem; }
+</style>

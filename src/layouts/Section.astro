@@ -1,0 +1,45 @@
+---
+// src/layouts/Section.astro
+// -----------------------------------------------------------------------------
+// Layout for every sub-page: a giant title, an optional red-pen aside next to
+// it, a one-line lede, then the page content.
+// -----------------------------------------------------------------------------
+import Base from './Base.astro';
+
+interface Props {
+  title: string;     // shown huge
+  lede?: string;     // plain one-sentence explanation of the page
+  aside?: string;    // red-pen joke beside the title
+}
+
+const { title, lede, aside } = Astro.props;
+---
+<Base title={title} description={lede}>
+  <header class="wrap head">
+    <h1>{title}</h1>
+    {aside && <p class="aside pen">{aside}</p>}
+    {lede && <p class="lede">{lede}</p>}
+  </header>
+  <main class="wrap main">
+    <slot />
+  </main>
+</Base>
+
+<style>
+  .head { position: relative; padding-top: clamp(2rem, 8vh, 5rem); }
+  h1 {
+    font-size: var(--s-huge);
+    font-weight: 800;
+    line-height: 0.85;
+    letter-spacing: -0.035em;
+    margin-left: -0.05em;        /* optical alignment: big type looks indented */
+  }
+  .aside {
+    margin: 0.6rem 0 0;
+    font-size: clamp(1.4rem, 2.6vw, 2rem);
+    transform: rotate(-3deg);
+    transform-origin: left;
+  }
+  .lede { margin: 1.5rem 0 0; max-width: 34rem; font-size: var(--s-1); line-height: 1.45; color: var(--muted); }
+  .main { margin-top: clamp(3rem, 8vh, 5rem); }
+</style>
