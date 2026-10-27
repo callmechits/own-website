@@ -5,6 +5,7 @@
 //   1. The name, enormous, with a red-pen aside.
 //   2. Selected work, set big, each "graded" in red pen.
 //   3. The latest lecture (blog post), with its number set huge.
+//   4. A 3D map of things I'm learning (components/LearningMap.astro).
 // Plus a quiet "currently" line if anything is marked current in media.ts.
 // -----------------------------------------------------------------------------
 import Base from '../layouts/Base.astro';
@@ -13,6 +14,7 @@ import { projects, grade } from '../data/projects';
 import { games, shows } from '../data/media';
 import { getPosts, lectureNumbers, excerpt, fmtDate } from '../data/posts';
 import { slug } from '../data/slug';
+import LearningMap from '../components/LearningMap.astro';
 
 const posts = await getPosts();
 const latest = posts[0];
@@ -105,6 +107,15 @@ const playing = games.find((g) => g.status === 'current');
         {playing && <p>Currently playing <a href="/games/">{playing.title}</a>.</p>}
       </section>
     )}
+
+    <!-- ── Learning map (data in src/data/learning.ts) ──────────────────── -->
+    <section class="block">
+      <div class="block-head">
+        <h2>Things I'm learning</h2>
+        <p class="pen">a map, not a syllabus</p>
+      </div>
+      <LearningMap />
+    </section>
   </main>
 </Base>
 
