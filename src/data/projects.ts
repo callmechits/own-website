@@ -43,8 +43,10 @@ export const projects: Project[] = [
       'Threaded camera capture and a live FPS counter to keep latency down.',
       'It is just one of the coolest things that I built.',
     ],
-    // TODO: add { label: 'Source', href: 'https://github.com/callmechits/<repo>' }
-    links: [],
+    // Rendered as links under the project on /projects/ (opens in a new tab).
+    links: [
+      { label: 'Source', href: 'https://github.com/callmechits/periodic_table_3D' },
+    ],
   },
   {
     name: 'JEE Advanced mock test platform',
