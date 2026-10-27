@@ -78,7 +78,7 @@ export const shows: MediaItem[] = [
   {
     title: 'Breaking Bad',
     status: 'dropped',
-    take: '10/10 for the time that I watched. I had so much fun watching the other side of the world.',
+    take: '10/10 for the time that I watched. I had so much fun watching the other side of life.',
   },
   {
     title: 'Money Heist',
@@ -95,6 +95,21 @@ export const shows: MediaItem[] = [
     status: 'finished',
     take: 'I loved the series. One of the first things that I almost binge-watched fully (excluding the waiting for the season part). It is just so much close to me because I am a student asw.',
   },
+  {
+    title: 'JOJO',
+    status: 'finished',
+    take: 'My favorite anime oat, I will not change my opinion. I am a fanboy of Jotaro and his daughter and love the series so much. It is just perfection start to end.',
+  },
+  {
+    title: 'Death Note',
+    status: 'finished',
+    take: 'This is an anime which I started way back but finished recently. I love thrillers/crime stuff and this was soooo good. Highly recommend to watch.',
+  },
+  {
+    title: 'Attack on Titan',
+    status: 'finished',
+    take: 'No need to say anything. Peak. 10/10.',
+  }
 ];
 
 /** Status wording differs by medium ("Playing" vs "Watching"). */

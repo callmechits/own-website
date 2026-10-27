@@ -45,7 +45,22 @@ export const projects: Project[] = [
     ],
     // Rendered as links under the project on /projects/ (opens in a new tab).
     links: [
-      { label: 'Source', href: 'https://github.com/callmechits/periodic_table_3D' },
+      { label: 'Visit it', href: 'https://github.com/callmechits/periodic_table_3D' },
+    ],
+  },
+  {
+    name: 'ELEGOO robot car',
+    when: '2026',
+    status: 'unstable',
+    stack: ['Arduino', 'C++'],
+    summary: 'Teaching a small car on an Arduino UNO to get around on its own.',
+    points: [
+      'Uses neural network and ML which I find complex as of now.',
+      'I love working on it because the car is so cuteee.',
+      'I am just developing my skills and making projects that actually work.',
+    ],
+    links: [
+      { label: 'Github Repo', href: 'https://github.com/callmechits/NeuralCarNetwork' },
     ],
   },
   {
@@ -55,14 +70,13 @@ export const projects: Project[] = [
     stack: ['HTML', 'CSS', 'JavaScript', 'Supabase', 'Google Sheets'],
     summary:
       'A timed exam interface with subject-wise scoring and performance tracking, used by over 2,000 students across two mocks, for $0 in hosting.',
+    points: [
+      'It was just an idea that I had randomly one day and I asked my community for encouragement which I got an ample amount of.',
+      'I spent 2-3 months building it just so that it was usable.',
+      'It kind of crashed the first time but a lot of people got their score so it was fine.',
+      'Way too many people showed up and I had not accounted for that, maybe I will return to this project this year.',
+    ],
     links: [],
   },
-  {
-    name: 'ELEGOO robot car',
-    when: '2026',
-    status: 'unstable',
-    stack: ['Arduino', 'C++'],
-    summary: 'Teaching a small car on an Arduino UNO to get around on its own. Uses neural network and ML which I find complex as of now.',
-    links: [],
-  },
+  
 ];
