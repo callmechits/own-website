@@ -1,0 +1,21 @@
+// wrangler.jsonc
+// -----------------------------------------------------------------------------
+// Tells `wrangler deploy` this is a static site: upload ./dist as-is, run no
+// server code. Its presence also stops Wrangler's auto-setup, which is what
+// tried (and failed) to install the server-side Astro adapter.
+// -----------------------------------------------------------------------------
+{
+  // Must match the Worker's name in the Cloudflare dashboard.
+  "name": "personal-website",
+
+  // Any past date works; it pins the Workers runtime behaviour.
+  "compatibility_date": "2026-10-01",
+
+  "assets": {
+    // Astro's build output.
+    "directory": "./dist",
+
+    // Unknown URLs get dist/404.html (the Notfoundium page) with a 404 status.
+    "not_found_handling": "404-page"
+  }
+}
