@@ -37,11 +37,26 @@ const playing = games.find((g) => g.status === 'current');
         </svg>
         short for Chitrarath Singh Mehra. you're welcome.
       </p>
-      <p class="statement">
-        I study computer science at Purdue, do olympiad maths for fun, and
-        build software that watches your hands. This site holds my work, a blog
-        I write most days, and opinions about anime nobody asked for.
-      </p>
+
+      <!-- Statement + photo: side by side on wide screens, stacked on phones -->
+      <div class="intro">
+        <p class="statement">
+          I study computer science at Purdue, love doing maths for fun, and
+          experiment for software/coding right now. This site holds my work, 
+          a blog. I'll try to write here as this is something that I made ;|.
+        </p>
+        <figure class="photo">
+          <!-- Served from public/me.jpg; files in public/ are served from the site root. -->
+          <img
+            src="/me.jpg"
+            alt="Chits, smiling at the camera"
+            width="600" height="750"
+            loading="eager"
+            decoding="async"
+          />
+          <figcaption class="pen">the author, pre-coffee</figcaption>
+        </figure>
+      </div>
     </section>
 
     <!-- ── 2. Selected work ────────────────────────────────────────────── -->
@@ -117,10 +132,42 @@ const playing = games.find((g) => g.status === 'current');
     fill: none; stroke: var(--red); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
   }
   .statement {
-    margin: clamp(3rem, 8vh, 5rem) 0 0;
+    margin: 0;
     max-width: 36rem;
     font-size: clamp(1.3rem, 2.4vw, var(--s-2));
     line-height: 1.4;
+  /* ── Statement + photo ──────────────────────────────────────────────── */
+  .intro {
+    display: grid;
+    grid-template-columns: minmax(0, 36rem) minmax(12rem, 18rem);  /* text | photo */
+    justify-content: start;
+    align-items: start;
+    gap: clamp(2rem, 6vw, 6rem);
+    margin-top: clamp(3rem, 8vh, 5rem);   /* spacing that .statement used to own */
+  }
+  .photo {
+    margin: 0;
+    transform: rotate(2deg);              /* pinned to the board, slightly crooked */
+  }
+  .photo img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;                  /* crops any photo to the same portrait shape */
+    object-fit: cover;                    /* fill the frame without stretching */
+    border: 6px solid var(--paper);       /* print-style white border */
+    outline: 1px solid var(--rule);       /* hairline edge so the border shows on light bg */
+  }
+  .photo figcaption {
+    margin-top: 0.6rem;
+    font-size: 1.5rem;
+    transform: rotate(-4deg);             /* tilted against the photo */
+  }
+  /* Phones: photo moves under the text, smaller, right-aligned */
+  @media (max-width: 760px) {
+    .intro { grid-template-columns: 1fr; gap: 2rem; }
+    .photo { max-width: 14rem; justify-self: end; }
+  }    
   }
 
   /* ── Section blocks ─────────────────────────────────────────────────── */

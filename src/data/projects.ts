@@ -25,8 +25,8 @@ export interface Project {
 export const grade: Record<Status, { mark: string; label: string }> = {
   stable:   { mark: 'A',    label: 'Finished' },
   unstable: { mark: 'Inc.', label: 'In progress' },
+  retired:  { mark: 'R',    label: 'Retired' },   // "Retired" reads clearer than "Used"
   decayed:  { mark: 'W',    label: 'Abandoned' },
-  Retired:  { mark: 'R',    label: 'Used' },
 };
 
 export const projects: Project[] = [
@@ -48,7 +48,7 @@ export const projects: Project[] = [
   {
     name: 'JEE Advanced mock test platform',
     when: 'Apr 2026',
-    status: 'Retired',
+    status: 'retired',
     stack: ['HTML', 'CSS', 'JavaScript', 'Supabase', 'Google Sheets'],
     summary:
       'A timed exam interface with subject-wise scoring and performance tracking, used by over 2,000 students across two mocks, for $0 in hosting.',
@@ -57,7 +57,7 @@ export const projects: Project[] = [
   {
     name: 'ELEGOO robot car',
     when: '2026',
-    status: 'In Build',
+    status: 'unstable',
     stack: ['Arduino', 'C++'],
     summary: 'Teaching a small car on an Arduino UNO to get around on its own. Uses neural network and ML which I find complex as of now.',
     links: [],

@@ -14,4 +14,7 @@ export interface Friend {
 
 export const friends: Friend[] = [
   // { name: 'Aarav', line: 'Sits at the back. Somehow aces everything.' },
+  { name: 'Connor', line: 'Nerdiest Engineer I have met, hates calculus, loves CAD.'},
+  { name: 'Amir', line: 'Most Asian looking Non-Asian I know, smallest in the group and most chaotic.'},
+  { name: 'Ian', line: 'Hungriest person I know as of now, bro never eats but somehow always eats. Loves having fun.'},
 ];
