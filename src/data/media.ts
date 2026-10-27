@@ -44,6 +44,21 @@ export const games: MediaItem[] = [
     status: 'current',
     take: '11/10. I have not finished it, but I love it so much. Great mechanics/visuals/story. As a zombie game fan, I am so happy everytime playing this.',
   },
+  {
+    title: 'Forza Horizon 6',
+    status: 'current',
+    take: 'My first High-end Racing Game, I play it almost everyday cos it is soooo fun. My main car right now is the Lambo Aurento something.',
+  },
+  {
+    title: 'Rocket League',
+    status: 'current',
+    take: 'My first multiplayer game outside specific genres. I used to play this on my old laptop, so many memories. Now, started it again just to play with my college friends.',
+  },
+  {
+    title: 'Minecraft',
+    status: 'current',
+    take: 'No need to explain.',
+  },
   
   // { title: '', status: 'current', rating: 8, take: '' },
 ];

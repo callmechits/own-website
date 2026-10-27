@@ -20,5 +20,6 @@ export const friends: Friend[] = [
   { name: 'Dominic', line: 'Mr. Dr. Pepper. Probably drinks more Dr. Pepper than Water. Also he is Texan so he is kinda international like me. HOWDY MATE!'},
   { name: 'Jacob', line: 'CRACK!'},
   { name: 'Shaun', line: 'White Cute Boy, but he drives cars idk how those 2 are correlated.'},
-  { name: 'Ozzy', line: 'Same name as the To-Go Box, roommate so I have to add him otherwise he cracks me. Typical Gym boy with no girlfriend. Also, he is always naked in the apartment, I guess it is a kink.'}
+  { name: 'Ozzy', line: 'Same name as the To-Go Box, roommate so I have to add him otherwise he cracks me. Hot Gym boy with no girlfriend. Also, he is always naked in the apartment, I guess it is a kink.'},
+  { name: 'Spencer', line: 'Cute White Boy. Bro loves the girls just for the love of the game. Probably said the N-Word more than Kanye.'},
 ];
