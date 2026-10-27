@@ -26,6 +26,7 @@ export const grade: Record<Status, { mark: string; label: string }> = {
   stable:   { mark: 'A',    label: 'Finished' },
   unstable: { mark: 'Inc.', label: 'In progress' },
   decayed:  { mark: 'W',    label: 'Abandoned' },
+  Retired:  { mark: 'R',    label: 'Used' },
 };
 
 export const projects: Project[] = [
@@ -47,36 +48,18 @@ export const projects: Project[] = [
   {
     name: 'JEE Advanced mock test platform',
     when: 'Apr 2026',
-    status: 'stable',
+    status: 'Retired',
     stack: ['HTML', 'CSS', 'JavaScript', 'Supabase', 'Google Sheets'],
     summary:
       'A timed exam interface with subject-wise scoring and performance tracking, used by over 2,000 students across two mocks, for $0 in hosting.',
     links: [],
   },
   {
-    name: 'Anime arc editing pipeline',
-    when: '2026',
-    status: 'unstable',
-    stack: ['Python', 'Ollama', 'FFmpeg', 'DaVinci Resolve'],
-    summary:
-      'Scrapes a character’s lore, has a local LLM pace the arc into a timeline, then cuts episodes into clips and a Resolve-ready timeline.',
-    links: [],
-  },
-  {
-    name: 'A national space program, in Kerbal',
-    when: 'Fall 2026',
-    status: 'unstable',
-    stack: ['Kerbal Space Program', 'Video'],
-    summary:
-      'A fictional country’s space race, told in three short films for HIST 387 (History of the Space Age).',
-    links: [],
-  },
-  {
     name: 'ELEGOO robot car',
     when: '2026',
-    status: 'unstable',
+    status: 'In Build',
     stack: ['Arduino', 'C++'],
-    summary: 'Teaching a small car on an Arduino UNO to get around on its own.',
+    summary: 'Teaching a small car on an Arduino UNO to get around on its own. Uses neural network and ML which I find complex as of now.',
     links: [],
   },
 ];
