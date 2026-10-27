@@ -1,0 +1,274 @@
+---
+// src/components/Walker.astro
+// -----------------------------------------------------------------------------
+// A small pixel Jotaro who walks along the bottom of every page. Every so
+// often he stops, Star Platinum appears in front of him, and it throws an
+// ORA rush for a couple of seconds before fading out and letting him walk on.
+//
+// How it works:
+//   • Frames are cut straight out of the two sprite sheets in public/sprites/
+//     using the rectangles in SHEETS below. The PNGs are never edited.
+//   • Each sheet has a solid background colour. On load, every pixel close to
+//     that colour is made transparent (a chroma key), so the sprites sit
+//     cleanly on both the paper (light) and chalkboard (dark) themes.
+//   • One <canvas> fixed to the bottom of the viewport draws everything with
+//     image smoothing off, so pixels stay square when scaled up.
+//   • pointer-events: none: it never blocks a click.
+//   • Hidden entirely for visitors who ask for reduced motion.
+//
+// Sprites: Capcom (JoJo's Bizarre Adventure, 1998), ripped by Dazz & Fret,
+// The Spriters Resource. Credited in the footer.
+// -----------------------------------------------------------------------------
+---
+<div class="walker" aria-hidden="true">
+  <canvas id="walker-canvas"></canvas>
+  <div class="ora" id="walker-ora">ORA ORA ORA!</div>
+</div>
+
+<style>
+  .walker {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 140px;            /* 70 sprite px × scale 2; JS reads this back */
+    pointer-events: none;     /* decoration only: clicks go straight through */
+    z-index: 5;               /* under the header (10) and the easter egg (50) */
+  }
+  @media (max-width: 640px) { .walker { height: 70px; } }   /* scale 1 on phones */
+
+  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+
+  /* Shout bubble. JS sets left/bottom; transform is left free for the shake. */
+  .ora {
+    position: absolute;
+    left: 0; bottom: 0;
+    font-family: var(--f-big);
+    font-weight: 800;
+    font-variation-settings: 'wdth' 75;
+    font-size: clamp(1rem, 2.4vw, 1.6rem);
+    letter-spacing: -0.01em;
+    color: var(--red);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 120ms;
+  }
+  .ora.on { opacity: 1; animation: ora-shake 110ms steps(2) infinite; }
+  @keyframes ora-shake {
+    from { transform: rotate(-6deg) translate(0, 0); }
+    to   { transform: rotate(-4deg) translate(2px, -2px); }
+  }
+
+  /* Leave room at the end of each page so he never sits on the last line. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(body) { padding-bottom: 140px; }
+  }
+  @media (prefers-reduced-motion: no-preference) and (max-width: 640px) {
+    :global(body) { padding-bottom: 70px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .walker { display: none; } }
+</style>
+
+<script>
+  // ── Sprite sheet data ─────────────────────────────────────────────────────
+  // A frame is [x, y, w, h] in sheet pixels. Every frame's bottom edge is the
+  // feet line, so frames are drawn bottom-aligned to the ground.
+  type Rect = [number, number, number, number];
+  interface Sheet {
+    src: string;
+    bg: [number, number, number];  // background colour to key out
+    hard: number;                  // colour distance below this → transparent
+    soft: number;                  // above this → fully opaque (between = edge)
+    spill: 'r' | 'g' | 'b';        // channel the background tints edges with
+  }
+
+  const SHEETS: Record<'jotaro' | 'star', Sheet> = {
+    jotaro: { src: '/sprites/jotaro.png',        bg: [128, 128, 255], hard: 40, soft: 110, spill: 'b' },
+    star:   { src: '/sprites/star-platinum.png', bg: [24, 251, 21],   hard: 90, soft: 200, spill: 'g' },
+  };
+
+  // Jotaro's sheet is a grid of 75 px cells.
+  const cell = (col: number, top: number): Rect => [75 * col, top, 75, 66];
+  const JOTARO = {
+    // Walk cycle: last 4 cells of row 1, then first 4 cells of row 2.
+    walk: [cell(6, 2), cell(7, 2), cell(8, 2), cell(9, 2), cell(0, 80), cell(1, 80), cell(2, 80), cell(3, 80)],
+    // Standing (coat flapping): first 6 cells of row 1.
+    idle: [0, 1, 2, 3, 4, 5].map((c) => cell(c, 2)),
+  };
+
+  // Star Platinum's sheet is not a grid; these were measured by hand.
+  const STAR = {
+    appear: [[8, 125, 31, 59], [45, 125, 28, 59], [80, 125, 31, 59], [120, 125, 31, 59]] as Rect[],
+    rush:   [[36, 272, 80, 64], [116, 272, 65, 64], [181, 272, 82, 64],
+             [263, 272, 77, 64], [340, 272, 83, 64], [423, 272, 72, 64]] as Rect[],
+  };
+
+  // ── Behaviour tuning (sprite px and seconds) ─────────────────────────────
+  const SPEED = 30;              // walking speed, sprite px per second
+  const WALK_FPS = 10;
+  const IDLE_FPS = 8;
+  const RUSH_FPS = 18;
+  const SUMMON_T = 0.35;         // Star Platinum fades in
+  const RUSH_T = 2.4;            // length of the barrage
+  const RECALL_T = 0.3;          // Star Platinum fades out
+  const STAR_ALPHA = 0.92;       // stands are a touch see-through
+  const STAR_OFFSET = 2;         // where the Stand stands, relative to Jotaro's centre
+  const ROOM = 110;              // free space needed in front before a rush
+  const rand = (a: number, b: number) => a + Math.random() * (b - a);
+
+  // ── Chroma key: sheet image → canvas with a transparent background ───────
+  function keyed(img: HTMLImageElement, s: Sheet): HTMLCanvasElement {
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const ctx = c.getContext('2d', { willReadFrequently: true })!;
+    ctx.drawImage(img, 0, 0);
+    const data = ctx.getImageData(0, 0, c.width, c.height);
+    const p = data.data;
+    const ch = { r: 0, g: 1, b: 2 }[s.spill];
+    for (let i = 0; i < p.length; i += 4) {
+      const dr = p[i] - s.bg[0], dg = p[i + 1] - s.bg[1], db = p[i + 2] - s.bg[2];
+      const a = (Math.sqrt(dr * dr + dg * dg + db * db) - s.hard) / (s.soft - s.hard);
+      if (a < 0.5) { p[i + 3] = 0; continue; }       // background: gone
+      if (a < 1) {
+        // Edge pixel: still tinted by the background. Pull the tint channel
+        // down toward the other two (despill). Only edges, so Jotaro's blue
+        // coat and Star Platinum's purple keep their real colours.
+        const others = [p[i], p[i + 1], p[i + 2]].filter((_, k) => k !== ch);
+        const cap = Math.max(...others) + (s.spill === 'b' ? 40 : 0);
+        p[i + ch] = Math.min(p[i + ch], cap);
+      }
+      p[i + 3] = 255;                                 // hard edge: pixel art, no halo
+    }
+    ctx.putImageData(data, 0, 0);
+    return c;
+  }
+
+  function load(src: string): Promise<HTMLImageElement> {
+    return new Promise((ok, fail) => {
+      const img = new Image();
+      img.onload = () => ok(img);
+      img.onerror = fail;
+      img.src = src;
+    });
+  }
+
+  async function start() {
+    const canvas = document.getElementById('walker-canvas') as HTMLCanvasElement | null;
+    const bubble = document.getElementById('walker-ora') as HTMLElement | null;
+    if (!canvas || !bubble) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const [jImg, sImg] = await Promise.all([load(SHEETS.jotaro.src), load(SHEETS.star.src)]);
+    const jSheet = keyed(jImg, SHEETS.jotaro);
+    const sSheet = keyed(sImg, SHEETS.star);
+    const ctx = canvas.getContext('2d')!;
+
+    // ── Canvas sizing: device pixels for crispness, CSS pixels for logic ──
+    let W = 0, H = 0, S = 2;       // S = CSS px per sprite px
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      W = canvas!.clientWidth;
+      H = canvas!.clientHeight;
+      S = Math.max(1, Math.round(H / 70));
+      canvas!.width = Math.round(W * dpr);
+      canvas!.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+    }
+    resize();
+    addEventListener('resize', resize);
+
+    // ── State ─────────────────────────────────────────────────────────────
+    type State = 'walk' | 'summon' | 'rush' | 'recall';
+    let state: State = 'walk';
+    let t = 0;                                  // seconds in current state
+    let clock = 0;                              // seconds since start (frame picking)
+    let x = rand(0.15, 0.85) * W;               // Jotaro's centre, CSS px
+    let dir: 1 | -1 = Math.random() < 0.5 ? 1 : -1;
+    let walked = 0;                             // seconds walked since last rush
+    let nextRush = rand(5, 10);                 // first rush comes a bit sooner
+    let last = performance.now();
+
+    const pick = (frames: Rect[], fps: number) => frames[Math.floor(clock * fps) % frames.length];
+
+    // Draw one frame. ox is the frame's left edge relative to Jotaro's centre
+    // in sprite px; the whole scene is mirrored when walking left.
+    function blit(sheet: HTMLCanvasElement, r: Rect, ox: number, oy = 0) {
+      ctx.drawImage(sheet, r[0], r[1], r[2], r[3], ox, -r[3] + oy, r[2], r[3]);
+    }
+
+    function go(next: State) { state = next; t = 0; }
+
+    function update(dt: number) {
+      t += dt;
+      clock += dt;
+      if (state === 'walk') {
+        x += dir * SPEED * S * dt;
+        const margin = 30 * S;
+        if (x > W - margin) { x = W - margin; dir = -1; }
+        if (x < margin)     { x = margin;     dir = 1; }
+        walked += dt;
+        const room = dir === 1 ? W - x : x;
+        if (walked > nextRush && room > ROOM * S) go('summon');
+      } else if (state === 'summon' && t > SUMMON_T) {
+        go('rush');
+      } else if (state === 'rush' && t > RUSH_T) {
+        go('recall');
+      } else if (state === 'recall' && t > RECALL_T) {
+        walked = 0;
+        nextRush = rand(9, 18);
+        go('walk');
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      // Origin at Jotaro's feet; 1 unit = 1 sprite px; mirror when facing left.
+      ctx.translate(Math.round(x), H - 2 * S);
+      ctx.scale(dir * S, S);
+
+      if (state === 'walk') {
+        blit(jSheet, pick(JOTARO.walk, WALK_FPS), -37);
+      } else {
+        blit(jSheet, pick(JOTARO.idle, IDLE_FPS), -37);
+
+        // Star Platinum, in front of him.
+        let alpha = STAR_ALPHA;
+        if (state === 'summon') alpha *= t / SUMMON_T;
+        if (state === 'recall') alpha *= 1 - t / RECALL_T;
+        ctx.globalAlpha = Math.max(0, alpha);
+        if (state === 'summon') {
+          blit(sSheet, pick(STAR.appear, 12), STAR_OFFSET + 6);
+        } else {
+          // Tiny random shake sells the impact.
+          const jx = state === 'rush' ? Math.round(rand(-1, 1)) : 0;
+          const jy = state === 'rush' ? Math.round(rand(-1, 0)) : 0;
+          blit(sSheet, pick(STAR.rush, RUSH_FPS), STAR_OFFSET + jx, jy);
+        }
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+
+      // Shout bubble above the Stand while the rush is on.
+      const shouting = state === 'rush';
+      bubble!.classList.toggle('on', shouting);
+      if (shouting) {
+        const bx = x + dir * 40 * S - bubble!.offsetWidth / 2;
+        bubble!.style.left = `${Math.round(Math.min(W - bubble!.offsetWidth - 8, Math.max(8, bx)))}px`;
+        bubble!.style.bottom = `${66 * S}px`;
+      }
+    }
+
+    function frame(now: number) {
+      // Clamp dt so a backgrounded tab doesn't teleport him on return.
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      update(dt);
+      draw();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  start().catch(() => { /* sprites missing: stay invisible rather than break the page */ });
+</script>

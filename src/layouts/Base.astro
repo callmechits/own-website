@@ -6,6 +6,7 @@
 // -----------------------------------------------------------------------------
 import '../styles/global.css';
 import { site } from '../data/site';
+import Walker from '../components/Walker.astro';
 
 interface Props {
   title?: string;         // page title; omitted on the home page
@@ -71,8 +72,13 @@ const isCurrent = (href: string) => here.startsWith(href);
         <span>Office hours: any time, by <a href={`mailto:${site.email}`}>email</a>.</span>
         <a href={site.github} target="_blank" rel="noopener">GitHub</a>
         <span>© {new Date().getFullYear()} {site.name}</span>
+        <!-- Credit for the walking sprites (see components/Walker.astro) -->
+        <span>Jotaro &amp; Star Platinum sprites: Capcom, ripped by Dazz &amp; Fret (The Spriters Resource). JoJo © Hirohiko Araki.</span>
       </div>
     </footer>
+
+    <!-- Pixel Jotaro walking along the bottom of the page -->
+    <Walker />
 
     <!-- Easter egg overlay. Hidden until the Konami code. -->
     <div class="detention" id="detention" hidden>
