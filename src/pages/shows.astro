@@ -1,0 +1,9 @@
+---
+// src/pages/shows.astro — element 12. Content lives in src/data/media.ts.
+import Section from '../layouts/Section.astro';
+import Shelf from '../components/Shelf.astro';
+import { shows } from '../data/media';
+---
+<Section sym="Tv" intro="Anime, series, films. One line each, no spoilers.">
+  <Shelf items={shows} kind="shows" />
+</Section>

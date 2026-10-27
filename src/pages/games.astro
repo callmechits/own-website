@@ -1,0 +1,9 @@
+---
+// src/pages/games.astro — element 11. Content lives in src/data/media.ts.
+import Section from '../layouts/Section.astro';
+import Shelf from '../components/Shelf.astro';
+import { games } from '../data/media';
+---
+<Section sym="Gm" intro="What I'm playing, what I finished, and what I quit at the final boss.">
+  <Shelf items={games} kind="games" />
+</Section>

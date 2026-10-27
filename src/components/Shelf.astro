@@ -1,0 +1,59 @@
+---
+// src/components/Shelf.astro
+// -----------------------------------------------------------------------------
+// A list of games or shows grouped by status: current first, then finished,
+// queued, dropped. Shows an empty state that tells you how to fill it.
+// -----------------------------------------------------------------------------
+import type { MediaItem, MediaStatus } from '../data/media';
+import { statusWord } from '../data/media';
+
+interface Props {
+  items: MediaItem[];
+  kind: 'games' | 'shows';
+}
+
+const { items, kind } = Astro.props;
+const order: MediaStatus[] = ['current', 'finished', 'queued', 'dropped'];
+
+// Bucket items by status, keeping file order within each bucket.
+const groups = order
+  .map((s) => ({ status: s, label: statusWord[kind][s], list: items.filter((i) => i.status === s) }))
+  .filter((g) => g.list.length > 0);
+---
+{groups.length === 0 ? (
+  <p class="empty">
+    Nothing logged yet. Add entries to <code>src/data/media.ts</code> and they appear here.
+  </p>
+) : (
+  groups.map((g) => (
+    <section class="group">
+      <h2>{g.label}</h2>
+      <ul>
+        {g.list.map((i) => (
+          <li data-status={i.status}>
+            <div class="title">
+              <span>{i.title}</span>
+              {i.year && <span class="year">{i.year}</span>}
+              {i.rating !== undefined && <span class="rating">{i.rating}/10</span>}
+            </div>
+            <p class="take">{i.take}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))
+)}
+
+<style>
+  .group + .group { margin-top: 3rem; }
+  h2 { font-size: var(--step-1); color: var(--muted); font-weight: 500; margin-bottom: 0.75rem; }
+  ul { list-style: none; margin: 0; padding: 0; max-width: var(--measure); }
+  li { padding: 1rem 0; border-top: 1px solid var(--rule); }
+  .title { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: baseline;
+           font-family: var(--font-display); font-size: var(--step-1); font-weight: 600; }
+  .year { font-size: var(--step--1); color: var(--muted); font-weight: 400; }
+  .rating { margin-left: auto; font-size: var(--step-0); font-variant-numeric: tabular-nums; }
+  .take { margin: 0.25rem 0 0; }
+  li[data-status='dropped'] .title span:first-child { text-decoration: line-through; text-decoration-thickness: 1px; }
+  .empty { color: var(--muted); }
+</style>

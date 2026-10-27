@@ -1,0 +1,281 @@
+---
+// src/pages/index.astro
+// -----------------------------------------------------------------------------
+// Home page: the site map drawn as a periodic table.
+//   • Hover or focus a tile → the panel in the table's top gap shows its details
+//     (real periodic-table posters put their legend in exactly that gap).
+//   • The spectrum below is the colour key; click a line to highlight a group.
+//   • ↑ ↑ ↓ ↓ ← → ← → B A triggers decay. Esc restores order.
+// -----------------------------------------------------------------------------
+import Base from '../layouts/Base.astro';
+import Tile from '../components/Tile.astro';
+import { elements, categories } from '../data/elements';
+import { site } from '../data/site';
+
+// Element shown in the panel before anything is hovered.
+const first = elements[0];
+
+// Map a wavelength onto the spectrum band (380–700 nm visible window → 0–100%).
+const pos = (nm: number) => `${(((nm - 380) / (700 - 380)) * 100).toFixed(2)}%`;
+---
+<Base>
+  <main class="wrap home">
+    <header class="intro">
+      <h1>{site.name}</h1>
+      <p>{site.tagline}</p>
+    </header>
+
+    <!-- The table. Each tile carries its panel text in data-* attributes. -->
+    <nav class="table" aria-label="Site sections" id="table">
+      {elements.map((e) => (
+        <Tile
+          n={e.n}
+          sym={e.sym}
+          name={e.name}
+          cat={e.cat}
+          href={e.href}
+          external={e.external}
+          style={`--r:${e.row};--col:${e.col}`}
+          data-n={e.n}
+          data-sym={e.sym}
+          data-name={e.name}
+          data-mass={e.mass}
+          data-note={e.note}
+          data-group={e.cat === 'unknown' ? 'Undiscovered' : categories[e.cat].label}
+        />
+      ))}
+
+      <!-- Detail panel. aria-live so screen readers hear the change on focus. -->
+      <section class="panel" data-cat={first.cat} aria-live="polite" id="panel">
+        <div class="panel-sym">
+          <span class="panel-n" id="p-n">{first.n}</span>
+          <span id="p-sym">{first.sym}</span>
+        </div>
+        <div class="panel-text">
+          <p class="panel-name"><span id="p-name">{first.name}</span><span class="panel-group" id="p-group">{categories.work.label}</span></p>
+          <p class="panel-note" id="p-note">{first.note}</p>
+          <p class="panel-mass">Atomic mass: <span id="p-mass">{first.mass}</span></p>
+        </div>
+      </section>
+    </nav>
+
+    <!-- Colour key drawn as the hydrogen emission spectrum, lines at true positions. -->
+    <section class="key" aria-label="Colour key">
+      <div class="band" aria-hidden="true">
+        {Object.entries(categories).map(([key, c]) => (
+          <span class="line" data-cat={key} style={`left:${pos(c.nm)}`}></span>
+        ))}
+      </div>
+      <div class="labels">
+        {Object.entries(categories).map(([key, c]) => (
+          <button type="button" class="label" data-cat={key} data-filter={key} style={`left:${pos(c.nm)}`} aria-pressed="false">
+            <span class="label-name">{c.label}</span>
+            <span class="label-nm">{c.line}, {c.nm} nm</span>
+          </button>
+        ))}
+      </div>
+      <p class="key-caption">
+        Colours are the four visible lines of hydrogen. Click one to light up its group.
+      </p>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .home { padding-top: clamp(2.5rem, 8vh, 6rem); }
+
+  .intro { margin-bottom: 3rem; max-width: 46rem; }
+  .intro p { margin: 0.9rem 0 0; font-size: var(--step-1); line-height: 1.4; color: var(--muted); }
+
+  /* ── Table grid ───────────────────────────────────────────────────────── */
+  .table {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);  /* mobile first */
+    gap: 0.45rem;
+  }
+  /* Desktop: tiles sit at their declared row/column; the panel fills the gap. */
+  @media (min-width: 720px) {
+    .table { grid-template-columns: repeat(8, 1fr); gap: 0.55rem; }
+    .table > :global(.tile) { grid-row: var(--r); grid-column: var(--col); }
+  }
+
+  /* ── Panel ────────────────────────────────────────────────────────────── */
+  .panel {
+    order: -1;                 /* mobile: panel above the tiles */
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    min-height: 7.5rem;
+    border-left: 3px solid var(--c);
+    transition: border-color 160ms ease;
+  }
+  @media (min-width: 720px) {
+    /* Must follow the base .panel rule above, or the base grid-column wins. */
+    .panel { order: 0; grid-row: 1; grid-column: 2 / 8; min-height: 0; margin-inline: 1rem; }
+  }
+  .panel-sym {
+    position: relative;
+    flex-shrink: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.6rem, 5vw, 3.8rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--c);
+    min-width: 1.5em;
+  }
+  .panel-n {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .panel-text p { margin: 0; }
+  .panel-name {
+    display: flex; gap: 0.75rem; align-items: baseline; flex-wrap: wrap;
+    font-family: var(--font-display); font-size: var(--step-1); font-weight: 600;
+  }
+  .panel-group { font-size: var(--step--1); font-weight: 400; color: var(--c); }
+  .panel-note { margin-top: 0.2rem !important; line-height: 1.4; }
+  .panel-mass { margin-top: 0.3rem !important; font-size: var(--step--1); color: var(--muted); }
+
+  /* ── Group highlight (set by the spectrum key) ────────────────────────── */
+  .table[data-filter] > :global(.tile) { opacity: 0.25; transition: opacity 200ms ease; }
+  .table[data-filter='work']  > :global(.tile[data-cat='work']),
+  .table[data-filter='life']  > :global(.tile[data-cat='life']),
+  .table[data-filter='media'] > :global(.tile[data-cat='media']),
+  .table[data-filter='links'] > :global(.tile[data-cat='links']) { opacity: 1; }
+
+  /* ── Spectrum key ─────────────────────────────────────────────────────── */
+  .key { margin-top: 3.5rem; max-width: 40rem; }
+  .band {
+    position: relative;
+    height: 2.2rem;
+    border-radius: var(--radius);
+    background: var(--band);     /* always dark, so the lines read as emission */
+  }
+  .line {
+    position: absolute; top: 0; bottom: 0;
+    width: 2px; margin-left: -1px;
+    background: var(--c);
+    /* faint bloom, like an over-exposed plate */
+    box-shadow: 0 0 6px 1px color-mix(in srgb, var(--c) 60%, transparent);
+  }
+  .labels { position: relative; height: 3.2rem; }
+  .label {
+    position: absolute; top: 0.5rem;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0.1rem 0.25rem;
+    background: none; border: 0; cursor: pointer;
+    font-family: var(--font-display);
+    color: var(--ink);
+  }
+  .label-name { font-size: var(--step--1); font-weight: 600; color: var(--c); }
+  .label-nm { font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
+  .label[aria-pressed='true'] .label-name { text-decoration: underline; text-underline-offset: 0.2em; }
+  .key-caption { margin-top: 0.5rem; font-size: var(--step--1); color: var(--muted); }
+
+  /* Hγ (434) and Hδ (410) sit close together; nudge labels apart on small screens. */
+  .label[data-cat='links'] { transform: translateX(-80%); }
+  .label[data-cat='media'] { transform: translateX(-20%); }
+
+  /* Phones: the band is too narrow for positioned labels, so they become a
+     plain row underneath (the lines above still sit at true wavelengths). */
+  @media (max-width: 560px) {
+    .labels { height: auto; display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin-top: 0.6rem; }
+    .label, .label[data-cat] { position: static; transform: none; align-items: flex-start; padding: 0; }
+  }
+
+  /* ── Decay mode (Konami code) ─────────────────────────────────────────── */
+  :global(body.decay) .table > :global(.tile) {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+    transition: transform 900ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+  :global(body.decay) .panel { --c: var(--h-alpha); }
+</style>
+
+<script>
+  // ---------------------------------------------------------------------------
+  // Client-side behaviour for the home page. Plain DOM, no framework.
+  // ---------------------------------------------------------------------------
+
+  const table = document.getElementById('table')!;
+  const panel = document.getElementById('panel')!;
+  const tiles = Array.from(table.querySelectorAll<HTMLElement>('.tile'));
+
+  // Panel fields, looked up once.
+  const field = (id: string) => document.getElementById(id)!;
+  const pN = field('p-n'), pSym = field('p-sym'), pName = field('p-name'),
+        pGroup = field('p-group'), pNote = field('p-note'), pMass = field('p-mass');
+
+  /** Copy one tile's data-* attributes into the panel. */
+  function show(tile: HTMLElement) {
+    const d = tile.dataset;
+    pN.textContent = d.n ?? '';
+    pSym.textContent = d.sym ?? '';
+    pName.textContent = d.name ?? '';
+    pGroup.textContent = d.group ?? '';
+    pNote.textContent = d.note ?? '';
+    pMass.textContent = d.mass ?? '';
+    panel.dataset.cat = d.cat;   // panel accent follows the tile's colour
+  }
+
+  // Hover for mouse users, focus for keyboard users. Both update the panel.
+  for (const t of tiles) {
+    t.addEventListener('mouseenter', () => !decaying && show(t));
+    t.addEventListener('focus', () => !decaying && show(t));
+  }
+
+  // ── Spectrum key: click a line to highlight its group; click again to clear.
+  const labels = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-filter]'));
+  for (const b of labels) {
+    b.addEventListener('click', () => {
+      const on = table.dataset.filter === b.dataset.filter;
+      if (on) delete table.dataset.filter;
+      else table.dataset.filter = b.dataset.filter;
+      labels.forEach((l) => l.setAttribute('aria-pressed', String(!on && l === b)));
+    });
+  }
+
+  // ── Konami code → decay ───────────────────────────────────────────────────
+  const code = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  let progress = 0;          // how many keys of the sequence have matched
+  let decaying = false;
+
+  function decay() {
+    decaying = true;
+    // Give each tile a random drift: mostly downward, like falling debris.
+    for (const t of tiles) {
+      t.style.setProperty('--dx', `${(Math.random() - 0.5) * 120}px`);
+      t.style.setProperty('--dy', `${40 + Math.random() * 160}px`);
+      t.style.setProperty('--rot', `${(Math.random() - 0.5) * 70}deg`);
+    }
+    document.body.classList.add('decay');
+    pN.textContent = '☢';
+    pSym.textContent = '!!';
+    pName.textContent = 'Critical mass';
+    pGroup.textContent = '';
+    pNote.textContent = 'You pressed the buttons. The table has decayed. Press Esc to restore order.';
+    pMass.textContent = 'rapidly decreasing';
+  }
+
+  function restore() {
+    decaying = false;
+    document.body.classList.remove('decay');
+    show(tiles[0]);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && decaying) return restore();
+    // Advance on a match; on a miss, restart (allowing the miss to begin a new run).
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    progress = key === code[progress] ? progress + 1 : key === code[0] ? 1 : 0;
+    if (progress === code.length) { progress = 0; decay(); }
+  });
+</script>

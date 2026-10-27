@@ -1,0 +1,19 @@
+---
+// src/pages/404.astro — Cloudflare Pages serves this for any unknown URL.
+import Base from '../layouts/Base.astro';
+import Tile from '../components/Tile.astro';
+---
+<Base title="Not found">
+  <main class="wrap nf">
+    <Tile n={404} sym="Nf" name="Notfoundium" cat="unknown" size="lg" />
+    <h1>This element does not exist.</h1>
+    <p>Element 404 has a half-life of zero seconds. Whatever was here decayed, or never was.</p>
+    <p><a href="/">Back to the table</a></p>
+  </main>
+</Base>
+
+<style>
+  .nf { padding-top: 18vh; max-width: 40rem; }
+  h1 { margin: 2rem 0 1rem; font-size: var(--step-3); }
+  p { color: var(--muted); }
+</style>

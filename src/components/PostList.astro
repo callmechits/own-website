@@ -1,0 +1,53 @@
+---
+// src/components/PostList.astro
+// -----------------------------------------------------------------------------
+// Posts grouped under month headings. With daily posting a flat list gets
+// long fast; months give it a scannable rhythm.
+// -----------------------------------------------------------------------------
+import { fmtDate, fmtMonth, type Post } from '../data/posts';
+
+interface Props { posts: Post[] }
+const { posts } = Astro.props;
+
+// Group consecutive posts by month (input is already sorted newest first).
+const months: { label: string; posts: Post[] }[] = [];
+for (const p of posts) {
+  const label = fmtMonth(p.data.date);
+  const last = months.at(-1);
+  if (last && last.label === label) last.posts.push(p);
+  else months.push({ label, posts: [p] });
+}
+---
+{posts.length === 0 ? (
+  <p class="empty">No posts yet. Run <code>npm run new</code> to start today's.</p>
+) : (
+  months.map((m) => (
+    <section class="month">
+      <h2>{m.label}</h2>
+      <ul>
+        {m.posts.map((p) => (
+          <li>
+            <time datetime={p.data.date.toISOString()}>{fmtDate(p.data.date)}</time>
+            <a href={`/blog/${p.id}/`}>{p.data.title}</a>
+            {p.data.draft && <span class="draft">draft</span>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))
+)}
+
+<style>
+  .month + .month { margin-top: 2.5rem; }
+  h2 { font-size: var(--step-1); color: var(--muted); font-weight: 500; margin-bottom: 0.6rem; }
+  ul { list-style: none; margin: 0; padding: 0; max-width: var(--measure); }
+  li { display: grid; grid-template-columns: 7.5rem 1fr auto; gap: 1rem; align-items: baseline;
+       padding: 0.55rem 0; border-top: 1px solid var(--rule); }
+  time { font-family: var(--font-display); font-size: var(--step--1); color: var(--muted);
+         font-variant-numeric: tabular-nums; }
+  a { text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .draft { font-size: var(--step--1); color: var(--h-alpha); }
+  .empty { color: var(--muted); }
+  @media (max-width: 480px) { li { grid-template-columns: 1fr; gap: 0.1rem; } }
+</style>
