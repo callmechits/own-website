@@ -41,6 +41,7 @@ export const projects: Project[] = [
       'Two-hand rectangle opens and closes the table; dwell-based thumb selection; pinch to zoom; two-finger rotation.',
       'Animated 3D Bohr and quantum models, with orbitals from hydrogenic radial wavefunctions and electron transitions mapped to visible colour.',
       'Threaded camera capture and a live FPS counter to keep latency down.',
+      'It is just one of the coolest things that I built.',
     ],
     // TODO: add { label: 'Source', href: 'https://github.com/callmechits/<repo>' }
     links: [],
