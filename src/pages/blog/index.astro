@@ -8,7 +8,7 @@ const posts = await getPosts();
 const numbers = lectureNumbers(posts);
 const tags = [...new Set(posts.flatMap((p) => p.data.tags))].sort();
 ---
-<Section title="Blog" aside="lecture notes, roughly daily" lede="Life, maths, games, whatever happened today. Short on purpose.">
+<Section title="Blog" aside="my life written down as notes" lede="Life, maths, games, whatever happened today. Short on purpose.">
   {tags.length > 0 && (
     <p class="tags">
       <span>Topics:</span>
