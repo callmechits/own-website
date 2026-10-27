@@ -13,9 +13,12 @@
 //     projected with simple perspective; nearer things are drawn darker and
 //     larger, farther things fainter. Colours come from the site's CSS
 //     variables, so it follows the light/dark theme.
+//   • Colour: each top-level branch gets its own colour (two palettes, one
+//     tuned for paper, one for chalkboard), inherited by everything under it,
+//     with a soft glow on the stars and a faint nebula behind each cluster.
 //   • Interaction: drag (or swipe sideways) to turn it. Hover a star to
-//     light its path back to the centre in red pen and read its note.
-//     Hovering a branch also reveals its children's names.
+//     light its path back to the centre, dim the other branches, and read
+//     its note. Hovering a branch also reveals its children's names.
 //   • Reduced motion: no auto-rotation; dragging still works.
 // -----------------------------------------------------------------------------
 import { topics } from '../data/learning';
@@ -40,13 +43,14 @@ import { topics } from '../data/learning';
   .sky {
     display: block;
     width: 100%;
-    height: clamp(340px, 56vh, 520px);
+    height: clamp(420px, 74vh, 700px);
     cursor: grab;
     touch-action: pan-y;        /* vertical swipes still scroll the page */
   }
   .sky:active { cursor: grabbing; }
 
-  /* One line under the map: the hovered topic, then its note in red pen. */
+  /* One line under the map: the hovered topic (in its branch colour, set by
+     JS), then its note in red pen. */
   .caption {
     display: flex;
     flex-wrap: wrap;
@@ -60,13 +64,14 @@ import { topics } from '../data/learning';
     font-weight: 700;
     font-variation-settings: 'wdth' 75;
     font-size: var(--s-1);
+    transition: color 150ms;
   }
   .caption-title:empty { display: none; }
   .caption-note { font-size: 1.5rem; transform: rotate(-1deg); }
 </style>
 
 <script>
-  interface Topic { id: string; label: string; parent?: string; note?: string; also?: string[] }
+  interface Topic { id: string; label: string; parent?: string; note?: string; also?: string[]; colour?: string }
   type V3 = [number, number, number];
 
   // Node: a topic with its 3D position and, each frame, its projection.
@@ -80,6 +85,7 @@ import { topics } from '../data/learning';
     sx: number; sy: number;     // projected screen position (CSS px)
     sz: number;                 // depth after rotation: +1 near, −1 far
     k: number;                  // perspective scale
+    branch: Node | null;        // the top-level branch it belongs to (null for the centre)
   }
 
   // ── Tuning ────────────────────────────────────────────────────────────────
@@ -121,7 +127,7 @@ import { topics } from '../data/learning';
     const byId = new Map<string, Node>();
     for (const t of topics) {
       byId.set(t.id, { t, depth: 0, dir: [0, 0, 1], p: [0, 0, 0], parent: null, kids: [],
-                       sx: 0, sy: 0, sz: 0, k: 1 });
+                       sx: 0, sy: 0, sz: 0, k: 1, branch: null });
     }
     let root: Node | null = null;
     for (const n of byId.values()) {
@@ -132,11 +138,12 @@ import { topics } from '../data/learning';
     if (!root) return [];
 
     // Branches: spread evenly over the sphere.
-    fibonacci(root.kids.length).forEach((d, i) => place(root!.kids[i], d, 1));
+    fibonacci(root.kids.length).forEach((d, i) => place(root!.kids[i], d, 1, root!.kids[i]));
 
     // Children fan out in a cone around their parent's direction.
-    function place(n: Node, dir: V3, depth: number) {
+    function place(n: Node, dir: V3, depth: number, branch: Node) {
       n.depth = depth;
+      n.branch = branch;
       n.dir = dir;
       n.p = mul(dir, SHELL[Math.min(depth, SHELL.length - 1)]);
       const kids = n.kids;
@@ -149,7 +156,7 @@ import { topics } from '../data/learning';
         const a = spin + (2 * Math.PI * j) / kids.length;
         const theta = kids.length === 1 ? cone * 0.6 : cone;
         const off = add(mul(u, Math.cos(a) * Math.sin(theta)), mul(v, Math.sin(a) * Math.sin(theta)));
-        place(kid, norm(add(mul(dir, Math.cos(theta)), off)), depth + 1);
+        place(kid, norm(add(mul(dir, Math.cos(theta)), off)), depth + 1, branch);
       });
     }
 
@@ -175,15 +182,30 @@ import { topics } from '../data/learning';
     const ctx = canvas.getContext('2d')!;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // Branch colours, assigned in order. Light: saturated mid-tones that hold
+    // up on white paper. Dark: brighter pastels, like coloured chalk.
+    const PALETTE_LIGHT = ['#6a4cf5', '#0d9a85', '#e0870b', '#e04580', '#2f7de1', '#4c9a2a', '#e5603a', '#1597bf'];
+    const PALETTE_DARK  = ['#b6a5ff', '#5ee3c9', '#ffc75e', '#ff90b6', '#8cbaff', '#a8e27c', '#ff9d78', '#7fd7f2'];
+    const branches = nodes.filter((n) => n.depth === 1);
+
     // Theme colours, re-read when the colour scheme flips.
     let C = { ink: '#000', muted: '#666', rule: '#ddd', red: '#c00', paper: '#fff' };
+    let P = PALETTE_LIGHT;
     const readColours = () => {
       const s = getComputedStyle(document.documentElement);
       const v = (name: string) => s.getPropertyValue(name).trim();
       C = { ink: v('--ink'), muted: v('--muted'), rule: v('--rule'), red: v('--red'), paper: v('--paper') };
+      P = matchMedia('(prefers-color-scheme: dark)').matches ? PALETTE_DARK : PALETTE_LIGHT;
     };
     readColours();
     matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColours);
+
+    // A node's colour: its branch's (a `colour` set on the branch in
+    // learning.ts wins over the palette). The centre stays ink.
+    const colourOf = (n: Node): string => {
+      if (!n.branch) return C.ink;
+      return n.branch.t.colour ?? P[branches.indexOf(n.branch) % P.length];
+    };
 
     // Fonts for labels (the same families as the page).
     const fontBig = getComputedStyle(document.documentElement).getPropertyValue('--f-big').trim();
@@ -195,7 +217,7 @@ import { topics } from '../data/learning';
       W = canvas.clientWidth;
       H = canvas.clientHeight;
       // Outer shell radius on screen; narrower on phones to leave room for labels.
-      R = Math.min(W * (W < 600 ? 0.36 : 0.4), H * 0.45);
+      R = Math.min(W * (W < 600 ? 0.38 : 0.44), H * 0.46);
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -265,63 +287,112 @@ import { topics } from '../data/learning';
     // Is n on the hovered node's path to the centre?
     const onPath = (n: Node) => { for (let h = hover; h; h = h.parent) if (h === n) return true; return false; };
 
+    // '#rrggbb' → the same colour, fully transparent.
+    const clear = (hex: string) => {
+      const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+      return m ? `rgba(${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}, 0)` : 'transparent';
+    };
+
+    // On hover, everything outside the hovered branch steps back.
+    const dimmed = (n: Node) => hover !== null && hover.depth > 0 && n.branch !== hover.branch && !onPath(n);
+
     function draw() {
       ctx.clearRect(0, 0, W, H);
       rings();
+      const unit = R / 200;                  // scale glows with the sphere size
 
-      // Cross-links: faint dashed lines.
+      // Nebulae: a soft wash of colour behind each branch cluster.
+      for (const b of branches) {
+        const r = 90 * b.k * unit;
+        const g = ctx.createRadialGradient(b.sx, b.sy, 0, b.sx, b.sy, r);
+        g.addColorStop(0, colourOf(b));
+        // Fade to the same colour at zero alpha ('transparent' is black at
+        // zero alpha, which greys the glow out on light paper).
+        g.addColorStop(1, clear(colourOf(b)));
+        ctx.globalAlpha = (dimmed(b) ? 0.03 : 0.14) * fade(b.sz);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(b.sx, b.sy, r, 0, 2 * Math.PI); ctx.fill();
+      }
+
+      // Cross-links: faint dashed lines in the colour of where they start.
       ctx.setLineDash([2, 5]);
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1.2;
       for (const [a, b] of links) {
-        ctx.globalAlpha = 0.5 * fade((a.sz + b.sz) / 2);
-        ctx.strokeStyle = (hover === a || hover === b) ? C.red : C.muted;
+        const lit = hover === a || hover === b;
+        ctx.globalAlpha = lit ? 0.9 : hover ? 0.1 : 0.5 * fade((a.sz + b.sz) / 2);
+        ctx.strokeStyle = colourOf(a);
         ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
       }
       ctx.setLineDash([]);
 
-      // Branch lines, far ones first.
+      // Branch lines, far ones first. Lines out of the centre fade from ink
+      // into the branch colour; everything else is solid branch colour.
       const edges = nodes.filter((n) => n.parent).sort((a, b) => a.sz - b.sz);
       for (const n of edges) {
         const p = n.parent!;
         const lit = hover !== null && onPath(n);
-        ctx.globalAlpha = lit ? 1 : 0.7 * fade((n.sz + p.sz) / 2);
-        ctx.strokeStyle = lit ? C.red : C.ink;
-        ctx.lineWidth = lit ? 2 : n.depth === 1 ? 1.4 : 0.9;
+        const col = colourOf(n);
+        if (n.depth === 1) {
+          const g = ctx.createLinearGradient(p.sx, p.sy, n.sx, n.sy);
+          g.addColorStop(0, C.ink); g.addColorStop(1, col);
+          ctx.strokeStyle = g;
+        } else {
+          ctx.strokeStyle = col;
+        }
+        ctx.globalAlpha = lit ? 1 : dimmed(n) ? 0.1 : 0.8 * fade((n.sz + p.sz) / 2);
+        ctx.lineWidth = (lit ? 2.6 : n.depth === 1 ? 1.8 : 1.2) * Math.max(1, unit * 0.8);
+        ctx.shadowColor = col;
+        ctx.shadowBlur = lit ? 10 : 0;
         ctx.beginPath(); ctx.moveTo(p.sx, p.sy); ctx.lineTo(n.sx, n.sy); ctx.stroke();
       }
+      ctx.shadowBlur = 0;
 
-      // Stars, far ones first so near ones sit on top.
+      // Stars, far ones first so near ones sit on top. Each glows in its colour.
       const order = [...nodes].sort((a, b) => a.sz - b.sz);
       for (const n of order) {
-        const lit = hover !== null && onPath(n);
-        const base = n.depth === 0 ? 5.5 : n.depth === 1 ? 4 : 2.6;
-        const r = base * n.k * (hover === n ? 1.5 : 1);
-        ctx.globalAlpha = lit ? 1 : fade(n.sz);
-        ctx.fillStyle = lit ? C.red : C.ink;
+        const col = colourOf(n);
+        const base = n.depth === 0 ? 7 : n.depth === 1 ? 6 : 3.6;
+        const r = base * n.k * Math.max(1, unit * 0.85) * (hover === n ? 1.5 : 1);
+        const dim = dimmed(n);
+        ctx.globalAlpha = dim ? 0.18 : fade(n.sz);
+        ctx.fillStyle = col;
+        ctx.shadowColor = col;
+        ctx.shadowBlur = dim || n.depth === 0 ? 0 : (n.depth === 1 ? 16 : 8) * fade(n.sz);
         ctx.beginPath(); ctx.arc(n.sx, n.sy, r, 0, 2 * Math.PI); ctx.fill();
         if (n.depth === 0) {               // the centre gets a hollow ring around it
-          ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.arc(n.sx, n.sy, r + 5, 0, 2 * Math.PI); ctx.stroke();
+          ctx.strokeStyle = col; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.arc(n.sx, n.sy, r + 6, 0, 2 * Math.PI); ctx.stroke();
         }
       }
+      ctx.shadowBlur = 0;
 
       // Labels: the centre and branches always; deeper topics only when
-      // they (or their branch) are hovered, to keep it uncluttered.
+      // they (or their branch) are hovered, to keep it uncluttered. A thin
+      // paper-coloured outline keeps text readable over lines.
       ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round';
       for (const n of order) {
         const show = n.depth <= 1 || hover === n || n.parent === hover || onPath(n);
         if (!show) continue;
         const lit = hover !== null && onPath(n);
-        const size = n.depth <= 1 ? 15 : 13;
-        ctx.font = `${n.depth <= 1 ? 700 : 500} ${Math.round(size * Math.min(1.15, n.k))}px ${fontBig}`;
-        ctx.globalAlpha = lit ? 1 : n.depth <= 1 ? fade(n.sz) : 0.9;
-        ctx.fillStyle = lit ? C.red : C.ink;
+        const size = (n.depth <= 1 ? 17 : 14) * Math.min(1.25, Math.max(1, unit * 0.9));
+        ctx.font = `${n.depth <= 1 ? 750 : 550} ${Math.round(size * Math.min(1.15, n.k))}px ${fontBig}`;
+        ctx.globalAlpha = lit ? 1 : dimmed(n) ? 0.22 : n.depth <= 1 ? fade(n.sz) : 0.95;
         // Labels sit on the outward side of their star.
         const right = n.sx >= W / 2;
         ctx.textAlign = n.depth === 0 ? 'center' : right ? 'left' : 'right';
-        const dx = n.depth === 0 ? 0 : right ? 9 : -9;
-        const dy = n.depth === 0 ? -18 : 0;
-        ctx.fillText(n.t.label, n.sx + dx, n.sy + dy);
+        const gap = 10 * Math.max(1, unit * 0.8);
+        let tx = n.sx + (n.depth === 0 ? 0 : right ? gap : -gap);
+        // Keep labels inside the canvas (narrow phone screens).
+        const tw = ctx.measureText(n.t.label).width;
+        const lo = ctx.textAlign === 'left' ? tx : ctx.textAlign === 'right' ? tx - tw : tx - tw / 2;
+        if (lo < 4) tx += 4 - lo;
+        if (lo + tw > W - 4) tx -= lo + tw - (W - 4);
+        const ty = n.sy + (n.depth === 0 ? -22 : 0);
+        ctx.strokeStyle = C.paper; ctx.lineWidth = 4;
+        ctx.strokeText(n.t.label, tx, ty);
+        ctx.fillStyle = colourOf(n);
+        ctx.fillText(n.t.label, tx, ty);
       }
       ctx.globalAlpha = 1;
     }
@@ -339,6 +410,7 @@ import { topics } from '../data/learning';
       if (best !== hover) {
         hover = best;
         title.textContent = hover ? hover.t.label : '';
+        title.style.color = hover ? colourOf(hover) : '';
         note.textContent = hover ? (hover.t.note ?? '') : idleNote;
       }
     }

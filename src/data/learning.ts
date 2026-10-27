@@ -12,6 +12,8 @@
 //   • `also` draws a faint dashed link to other topics it connects to, across
 //     branches (e.g. orbitals ↔ the periodic table project).
 //   • Order doesn't matter, and the layout recomputes itself on every build.
+//   • Each top-level branch gets a colour automatically. To pick one yourself,
+//     add colour: '#hex' to the branch (it's used in both light and dark mode).
 // -----------------------------------------------------------------------------
 
 export interface Topic {
@@ -20,15 +22,16 @@ export interface Topic {
   parent?: string;     // id of the node it branches off
   note?: string;       // one line shown when hovered
   also?: string[];     // cross-links to other topic ids
+  colour?: string;     // top-level branches only: override the automatic colour
 }
 
 export const topics: Topic[] = [
   // ── Centre ─────────────────────────────────────────────────────────────
-  { id: 'me', label: 'Chits', note: 'Everything below, at varying levels of confidence.' },
+  { id: 'me', label: 'Chits', note: 'Everything listed, with varying confidence.' },
 
   // ── Maths ──────────────────────────────────────────────────────────────
   { id: 'maths', label: 'Maths', parent: 'me' },
-  { id: 'time-scales', label: 'Time scales calculus', parent: 'maths',
+  { id: 'calc', label: 'Multivariate calculus', parent: 'maths',
     note: 'Calculus that works on ℝ, ℤ and everything in between.' },
   { id: 'jump', label: 'Forward jump σ', parent: 'time-scales',
     note: 'σ(t): the next point after t. The whole theory hangs on it.' },
