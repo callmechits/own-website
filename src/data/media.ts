@@ -59,13 +59,42 @@ export const games: MediaItem[] = [
     status: 'current',
     take: 'No need to explain.',
   },
-  
+  {
+    title: 'World War Z',
+    status: 'finished',
+    take: 'Such a fun game to play multiplayer on and just chill out. No grinding, just hop on and shoot lol.'
+  }
   // { title: '', status: 'current', rating: 8, take: '' },
 ];
 
 export const shows: MediaItem[] = [
   // Example:
   // { title: 'Show name', status: 'current', take: 'One line on it.' },
+  {
+    title: 'The Mentalist',
+    status: 'current',
+    take: '10/10. Recommend it to everyone. I larp about being PJ. I love the show and relate to it so much.',
+  },
+  {
+    title: 'Breaking Bad',
+    status: 'dropped',
+    take: '10/10 for the time that I watched. I had so much fun watching the other side of the world.',
+  },
+  {
+    title: 'Money Heist',
+    status: 'finished',
+    take: '10/10. Soooooo good. I loved every season of it till the end. I just could not finish the extra stuff to watch. I wish I would have invested more time in that.',
+  },
+  {
+    title: 'Squid Game',
+    status: 'finished',
+    take: 'What an ending. I love the guy man. The show was so disconnected from everything that I have ever watched. I wish I had some more series like that.',
+  },
+  {
+    title: 'All of Us are Dead',
+    status: 'finished',
+    take: 'I loved the series. One of the first things that I almost binge-watched fully (excluding the waiting for the season part). It is just so much close to me because I am a student asw.',
+  },
 ];
 
 /** Status wording differs by medium ("Playing" vs "Watching"). */
