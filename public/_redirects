@@ -1,3 +1,0 @@
-# Cloudflare Pages redirect rules: one per line, "from to status".
-# Uncomment after attaching your domain (replace yourname.dev):
-# https://www.yourname.dev/* https://yourname.dev/:splat 301
