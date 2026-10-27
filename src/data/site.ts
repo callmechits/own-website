@@ -15,5 +15,5 @@ export const site = {
   github: 'https://github.com/callmechits',
   // TODO: paste your LinkedIn profile URL. Until then the tile is marked
   // "undiscovered" automatically (see elements.ts).
-  linkedin: '',
+  linkedin: 'https://www.linkedin.com/in/chitrarath-mehra-46b52b421/',
 } as const;

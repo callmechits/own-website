@@ -39,6 +39,11 @@ export const games: MediaItem[] = [
     status: 'finished',
     take: '10/10. What a game; it was the first game that I downloaded on my new laptop because I love the Uncharted series.',
   },
+  {
+    title: 'The Last of Us Part 2',
+    status: 'current',
+    take: '11/10. I have not finished it, but I love it so much. Great mechanics/visuals/story. As a zombie game fan, I am so happy everytime playing this.',
+  },
   
   // { title: '', status: 'current', rating: 8, take: '' },
 ];

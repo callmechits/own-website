@@ -9,7 +9,7 @@
 //   decayed  = abandoned              → W (withdrew). Honesty is funny; keep a few.
 // -----------------------------------------------------------------------------
 
-export type Status = 'stable' | 'unstable' | 'decayed';
+export type Status = 'stable' | 'unstable' | 'decayed' | 'retired';
 
 export interface Project {
   name: string;
