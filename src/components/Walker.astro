@@ -1,51 +1,66 @@
 ---
 // src/components/Walker.astro
 // -----------------------------------------------------------------------------
-// A small pixel Jotaro who walks along the bottom of every page. Every so
-// often he stops, Star Platinum appears in front of him, and it throws an
-// ORA rush for a couple of seconds before fading out and letting him walk on.
+// A small pixel Jotaro who walks along the bottom of every page.
+//
+//   • Every so often he stops, Star Platinum appears in front of him and
+//     throws an ORA rush, then fades out and he walks on.
+//   • Click him: he stops and says a line. Click again for another line.
+//   • Click him three times quickly: "Star Platinum: The World!". Time stops
+//     (the page inverts) and only he keeps moving, then time resumes.
 //
 // How it works:
 //   • Frames are cut straight out of the two sprite sheets in public/sprites/
-//     using the rectangles in SHEETS below. The PNGs are never edited.
+//     using the rectangles below. The PNGs are never edited.
 //   • Each sheet has a solid background colour. On load, every pixel close to
 //     that colour is made transparent (a chroma key), so the sprites sit
 //     cleanly on both the paper (light) and chalkboard (dark) themes.
 //   • One <canvas> fixed to the bottom of the viewport draws everything with
-//     image smoothing off, so pixels stay square when scaled up.
-//   • pointer-events: none: it never blocks a click.
+//     image smoothing off. The canvas ignores the mouse; only a small
+//     invisible button that follows Jotaro takes clicks, so the rest of the
+//     page underneath stays clickable.
 //   • Hidden entirely for visitors who ask for reduced motion.
 //
 // Sprites: Capcom (JoJo's Bizarre Adventure, 1998), ripped by Dazz & Fret,
 // The Spriters Resource. Credited in the footer.
 // -----------------------------------------------------------------------------
 ---
-<div class="walker" aria-hidden="true">
+<div class="walker" id="walker" aria-hidden="true">
   <canvas id="walker-canvas"></canvas>
+  <!-- Invisible hitbox that follows Jotaro; the only part that takes clicks. -->
+  <button class="hit" id="walker-hit" tabindex="-1" aria-hidden="true"></button>
   <div class="ora" id="walker-ora">ORA ORA ORA!</div>
+  <div class="say" id="walker-say"></div>
 </div>
 
 <style>
   .walker {
     position: fixed;
     left: 0; right: 0; bottom: 0;
-    height: 140px;            /* 70 sprite px × scale 2; JS reads this back */
-    pointer-events: none;     /* decoration only: clicks go straight through */
+    height: 100px;            /* JS resets this to fit the chosen sprite scale */
+    pointer-events: none;     /* decoration: clicks go straight through... */
     z-index: 5;               /* under the header (10) and the easter egg (50) */
   }
-  @media (max-width: 640px) { .walker { height: 70px; } }   /* scale 1 on phones */
-
   canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 
-  /* Shout bubble. JS sets left/bottom; transform is left free for the shake. */
+  /* ...except on Jotaro himself. JS moves and sizes this box every frame. */
+  .hit {
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 0; height: 0;
+    padding: 0; border: 0; background: none;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  /* ORA shout. JS sets left/bottom; transform is left free for the shake. */
   .ora {
     position: absolute;
     left: 0; bottom: 0;
     font-family: var(--f-big);
     font-weight: 800;
     font-variation-settings: 'wdth' 75;
-    font-size: clamp(1rem, 2.4vw, 1.6rem);
-    letter-spacing: -0.01em;
+    font-size: clamp(1rem, 2.2vw, 1.4rem);
     color: var(--red);
     white-space: nowrap;
     opacity: 0;
@@ -57,17 +72,60 @@
     to   { transform: rotate(-4deg) translate(2px, -2px); }
   }
 
-  /* Leave room at the end of each page so he never sits on the last line. */
-  @media (prefers-reduced-motion: no-preference) {
-    :global(body) { padding-bottom: 140px; }
+  /* Speech bubble for his lines: a margin note on paper, with a little tail. */
+  .say {
+    position: absolute;
+    left: 0; bottom: 0;
+    max-width: 16rem;
+    padding: 0.35rem 0.7rem 0.45rem;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    font-family: var(--f-pen);
+    font-size: 1.35rem;
+    line-height: 1.1;
+    color: var(--ink);
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 140ms, transform 140ms;
   }
-  @media (prefers-reduced-motion: no-preference) and (max-width: 640px) {
-    :global(body) { padding-bottom: 70px; }
+  .say::after {             /* the tail, pointing down at his head */
+    content: '';
+    position: absolute;
+    left: var(--tail, 50%); bottom: -7px;
+    width: 10px; height: 10px;
+    background: var(--paper);
+    border-right: 1.5px solid var(--ink);
+    border-bottom: 1.5px solid var(--ink);
+    transform: translateX(-50%) rotate(45deg);
   }
+  .say.on { opacity: 1; transform: none; }
+
+  /* Time stop: invert the whole page, the way the anime does it. */
+  :global(html) { transition: filter 450ms ease; }
+  :global(html.za-warudo) { filter: invert(1); }   /* a colour negative */
+
   @media (prefers-reduced-motion: reduce) { .walker { display: none; } }
 </style>
 
 <script>
+  // ── Size ──────────────────────────────────────────────────────────────────
+  // Screen px per sprite px. 1 = sheet size (~66 px tall), 2 = double.
+  // Snapped to whole device pixels at runtime so the pixels stay square.
+  const SIZE_DESKTOP = 1.25;
+  const SIZE_PHONE = 1;              // under 640 px wide
+
+  // ── Lines he says when clicked (cycled in order, starting at random) ─────
+  const LINES = [
+    'Yare yare daze.',
+    'Good grief.',
+    'Urusai.',
+    '…',
+    'Go read a lecture.',
+    "You're still here? Good grief.",
+  ];
+
   // ── Sprite sheet data ─────────────────────────────────────────────────────
   // A frame is [x, y, w, h] in sheet pixels. Every frame's bottom edge is the
   // feet line, so frames are drawn bottom-aligned to the ground.
@@ -109,9 +167,15 @@
   const SUMMON_T = 0.35;         // Star Platinum fades in
   const RUSH_T = 2.4;            // length of the barrage
   const RECALL_T = 0.3;          // Star Platinum fades out
+  const TALK_T = 2.6;            // how long a clicked line stays up
+  const CALL_T = 0.9;            // "Star Platinum: The World!" before time stops
+  const STOPPED_T = 3;           // how long time stays stopped
+  const RESUME_T = 1.6;          // "Time resumes." afterwards
+  const TRIPLE_MS = 900;         // three clicks within this window = time stop
   const STAR_ALPHA = 0.92;       // stands are a touch see-through
   const STAR_OFFSET = 2;         // where the Stand stands, relative to Jotaro's centre
   const ROOM = 110;              // free space needed in front before a rush
+  const ROW_H = 72;              // canvas height in sprite px (tallest frame + margin)
   const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
   // ── Chroma key: sheet image → canvas with a transparent background ───────
@@ -152,9 +216,12 @@
   }
 
   async function start() {
+    const root = document.getElementById('walker');
     const canvas = document.getElementById('walker-canvas') as HTMLCanvasElement | null;
-    const bubble = document.getElementById('walker-ora') as HTMLElement | null;
-    if (!canvas || !bubble) return;
+    const hit = document.getElementById('walker-hit');
+    const ora = document.getElementById('walker-ora');
+    const say = document.getElementById('walker-say');
+    if (!root || !canvas || !hit || !ora || !say) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const [jImg, sImg] = await Promise.all([load(SHEETS.jotaro.src), load(SHEETS.star.src)]);
@@ -162,13 +229,17 @@
     const sSheet = keyed(sImg, SHEETS.star);
     const ctx = canvas.getContext('2d')!;
 
-    // ── Canvas sizing: device pixels for crispness, CSS pixels for logic ──
-    let W = 0, H = 0, S = 2;       // S = CSS px per sprite px
+    // ── Sizing ─────────────────────────────────────────────────────────────
+    let W = 0, H = 0, S = 1;       // S = CSS px per sprite px
     function resize() {
       const dpr = window.devicePixelRatio || 1;
+      const want = innerWidth < 640 ? SIZE_PHONE : SIZE_DESKTOP;
+      // Whole device pixels per sprite pixel, so every pixel is the same size.
+      S = Math.max(1, Math.round(want * dpr)) / dpr;
+      H = Math.round(ROW_H * S);
+      root!.style.height = `${H}px`;
+      document.body.style.paddingBottom = `${H}px`;   // never cover the last line
       W = canvas!.clientWidth;
-      H = canvas!.clientHeight;
-      S = Math.max(1, Math.round(H / 70));
       canvas!.width = Math.round(W * dpr);
       canvas!.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -178,7 +249,10 @@
     addEventListener('resize', resize);
 
     // ── State ─────────────────────────────────────────────────────────────
-    type State = 'walk' | 'summon' | 'rush' | 'recall';
+    // walk → summon → rush → recall → walk           (automatic, on a timer)
+    // walk → talk → walk                              (one click)
+    // any  → call → stopped → resume → walk           (three quick clicks)
+    type State = 'walk' | 'summon' | 'rush' | 'recall' | 'talk' | 'call' | 'stopped' | 'resume';
     let state: State = 'walk';
     let t = 0;                                  // seconds in current state
     let clock = 0;                              // seconds since start (frame picking)
@@ -186,38 +260,102 @@
     let dir: 1 | -1 = Math.random() < 0.5 ? 1 : -1;
     let walked = 0;                             // seconds walked since last rush
     let nextRush = rand(5, 10);                 // first rush comes a bit sooner
+    let line = Math.floor(Math.random() * LINES.length);
+    let clicks: number[] = [];                  // recent click times, for the triple
     let last = performance.now();
 
-    const pick = (frames: Rect[], fps: number) => frames[Math.floor(clock * fps) % frames.length];
-
-    // Draw one frame. ox is the frame's left edge relative to Jotaro's centre
-    // in sprite px; the whole scene is mirrored when walking left.
-    function blit(sheet: HTMLCanvasElement, r: Rect, ox: number, oy = 0) {
-      ctx.drawImage(sheet, r[0], r[1], r[2], r[3], ox, -r[3] + oy, r[2], r[3]);
-    }
+    const pick = (frames: Rect[], fps: number) =>
+      frames[Math.floor(Math.max(0, clock) * fps) % frames.length];
 
     function go(next: State) { state = next; t = 0; }
+
+    function speak(text: string | null) {
+      if (text === null) { say!.classList.remove('on'); return; }
+      say!.textContent = text;
+      say!.classList.add('on');
+    }
+
+    // ── Clicks ────────────────────────────────────────────────────────────
+    hit.addEventListener('click', () => {
+      const now = performance.now();
+      clicks = clicks.filter((c) => now - c < TRIPLE_MS).concat(now);
+
+      // Three quick clicks: stop time (unless it's already happening).
+      if (clicks.length >= 3 && !['call', 'stopped', 'resume'].includes(state)) {
+        clicks = [];
+        speak('Star Platinum: The World!');
+        go('call');
+        return;
+      }
+      // One click: stop and say the next line. Not mid-rush or mid-time-stop.
+      if (state === 'walk' || state === 'talk') {
+        line = (line + 1) % LINES.length;
+        speak(LINES[line]);
+        go('talk');
+      }
+    });
+
+    // ── Update ────────────────────────────────────────────────────────────
+    function walkStep(dt: number) {
+      x += dir * SPEED * S * dt;
+      const margin = 30 * S;
+      if (x > W - margin) { x = W - margin; dir = -1; }
+      if (x < margin)     { x = margin;     dir = 1; }
+    }
 
     function update(dt: number) {
       t += dt;
       clock += dt;
-      if (state === 'walk') {
-        x += dir * SPEED * S * dt;
-        const margin = 30 * S;
-        if (x > W - margin) { x = W - margin; dir = -1; }
-        if (x < margin)     { x = margin;     dir = 1; }
-        walked += dt;
-        const room = dir === 1 ? W - x : x;
-        if (walked > nextRush && room > ROOM * S) go('summon');
-      } else if (state === 'summon' && t > SUMMON_T) {
-        go('rush');
-      } else if (state === 'rush' && t > RUSH_T) {
-        go('recall');
-      } else if (state === 'recall' && t > RECALL_T) {
-        walked = 0;
-        nextRush = rand(9, 18);
-        go('walk');
+      switch (state) {
+        case 'walk': {
+          walkStep(dt);
+          walked += dt;
+          const room = dir === 1 ? W - x : x;
+          if (walked > nextRush && room > ROOM * S) go('summon');
+          break;
+        }
+        case 'summon':  if (t > SUMMON_T) go('rush'); break;
+        case 'rush':    if (t > RUSH_T) go('recall'); break;
+        case 'recall':
+          if (t > RECALL_T) { walked = 0; nextRush = rand(9, 18); go('walk'); }
+          break;
+        case 'talk':
+          if (t > TALK_T) { speak(null); go('walk'); }
+          break;
+        case 'call':
+          if (t > CALL_T) {
+            speak(null);
+            document.documentElement.classList.add('za-warudo');
+            go('stopped');
+          }
+          break;
+        case 'stopped':
+          walkStep(dt);                         // only he can move in stopped time
+          if (t > STOPPED_T) {
+            document.documentElement.classList.remove('za-warudo');
+            speak('Time resumes.');
+            go('resume');
+          }
+          break;
+        case 'resume':
+          if (t > RESUME_T) { speak(null); walked = 0; go('walk'); }
+          break;
       }
+    }
+
+    // ── Draw ──────────────────────────────────────────────────────────────
+    // ox is a frame's left edge relative to Jotaro's centre, in sprite px.
+    function blit(sheet: HTMLCanvasElement, r: Rect, ox: number, oy = 0) {
+      ctx.drawImage(sheet, r[0], r[1], r[2], r[3], ox, -r[3] + oy, r[2], r[3]);
+    }
+
+    // Centre an overlay element horizontally on cx, kept inside the viewport.
+    function place(el: HTMLElement, cx: number, bottom: number) {
+      const w = el.offsetWidth;
+      const left = Math.min(W - w - 8, Math.max(8, cx - w / 2));
+      el.style.left = `${Math.round(left)}px`;
+      el.style.bottom = `${Math.round(bottom)}px`;
+      return left;
     }
 
     function draw() {
@@ -227,12 +365,10 @@
       ctx.translate(Math.round(x), H - 2 * S);
       ctx.scale(dir * S, S);
 
-      if (state === 'walk') {
-        blit(jSheet, pick(JOTARO.walk, WALK_FPS), -37);
-      } else {
-        blit(jSheet, pick(JOTARO.idle, IDLE_FPS), -37);
+      const moving = state === 'walk' || state === 'stopped';
+      blit(jSheet, moving ? pick(JOTARO.walk, WALK_FPS) : pick(JOTARO.idle, IDLE_FPS), -37);
 
-        // Star Platinum, in front of him.
+      if (state === 'summon' || state === 'rush' || state === 'recall') {
         let alpha = STAR_ALPHA;
         if (state === 'summon') alpha *= t / SUMMON_T;
         if (state === 'recall') alpha *= 1 - t / RECALL_T;
@@ -249,19 +385,28 @@
       }
       ctx.restore();
 
-      // Shout bubble above the Stand while the rush is on.
+      // Hitbox over his body (about 30 × 62 sprite px).
+      hit!.style.width = `${30 * S}px`;
+      hit!.style.height = `${62 * S}px`;
+      hit!.style.left = `${Math.round(x - 15 * S)}px`;
+      hit!.style.bottom = `${2 * S}px`;
+
+      // ORA shout above the Stand while the rush is on.
       const shouting = state === 'rush';
-      bubble!.classList.toggle('on', shouting);
-      if (shouting) {
-        const bx = x + dir * 40 * S - bubble!.offsetWidth / 2;
-        bubble!.style.left = `${Math.round(Math.min(W - bubble!.offsetWidth - 8, Math.max(8, bx)))}px`;
-        bubble!.style.bottom = `${66 * S}px`;
+      ora!.classList.toggle('on', shouting);
+      if (shouting) place(ora!, x + dir * 40 * S, 64 * S);
+
+      // Speech bubble above his head, tail pointing at him.
+      if (say!.classList.contains('on')) {
+        const left = place(say!, x, 66 * S);
+        say!.style.setProperty('--tail', `${Math.round(x - left)}px`);
       }
     }
 
     function frame(now: number) {
-      // Clamp dt so a backgrounded tab doesn't teleport him on return.
-      const dt = Math.min(0.05, (now - last) / 1000);
+      // Clamp dt: never negative (the first rAF timestamp can predate `last`),
+      // and capped so a backgrounded tab doesn't teleport him on return.
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
       last = now;
       update(dt);
       draw();
