@@ -29,8 +29,6 @@ Margin jokes: `<Note>text</Note>` placed right before the paragraph it's about.
 Project grades come from `status` in `projects.ts` (A, Inc., W).
 New section: add a page in `src/pages/` and a link in `nav` in `src/layouts/Base.astro`.
 
-## Résumé
-Drop a copy at `public/resume.pdf`. Remove your phone number from it first.
 
 ## Deploy (Cloudflare Workers, static assets)
 `wrangler.jsonc` makes `npx wrangler deploy` upload `dist/` as static files.
